@@ -1,8 +1,36 @@
 import express from "express";
 import { insertOne, find } from "../api/db.mjs";
 import { search } from "../api/search.mjs";
+import { autocompleteLocation } from "../api/autocomplete.mjs";
+import { detailLocation } from "../api/detail.mjs";
+import { setLocation } from "../api/set.mjs";
 
 const router = express.Router();
+
+router.post("/set/location", async (req, res) => {
+  try {
+    res.setHeader("Set-Cookie", await setLocation(req.body.locationDetails));
+    res.send();
+  } catch (e) {
+    console.error(e);
+  }
+});
+
+router.get("/detail/location", async (req, res) => {
+  try {
+    res.json(await detailLocation(req.body.locationData));
+  } catch (e) {
+    console.error(e);
+  }
+});
+
+router.get("/autocomplete/location", async (req, res) => {
+  try {
+    res.json(await autocompleteLocation(req.body.query));
+  } catch (e) {
+    console.error(e);
+  }
+});
 
 router.get("/search", async (req, res) => {
   try {
