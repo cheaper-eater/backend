@@ -130,7 +130,7 @@ class Grubhub extends Service {
       hideHateos: true,
       searchMetrics: true,
       queryText: query,
-      location: `POINT(${location.latitude} ${location.longitude})`,
+      location: `POINT(${location.longitude} ${location.latitude})`,
       preciseLocation: true,
       //geohash: "9q5czyy7tpky", // does not seem to be required
       includeOffers: true,
