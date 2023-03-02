@@ -82,7 +82,17 @@ const parseGrubhubStore = (storeData) => {
       zipCode: address.zipCode,
       country: address.country,
     },
-    fees: { deliveryFee: delivery_fee.amount },
+    fees: {
+      smallCartFeeCents: delivery_fee.delivery_fees[0].amount,
+      smallCartThresholdCents:
+        delivery_fee.delivery_fees[0].threshhold.threshhold,
+      driverBenefitsCents: delivery_fee.delivery_fees[1].amount,
+      serviceFeePercent: delivery_fee.delivery_fees[2].amount,
+      serviceFeeMinimumCents: delivery_fee.delivery_fees[2].amount,
+      serviceFeeMaximumCents: delivery_fee.delivery_fees[2].amount,
+      serviceFeeCents: delivery_fee.delivery_fees[3].amount,
+      salesTaxDecimal: delivery_fee.sales_tax,
+    },
     menu: menu_category_list.map(
       ({ menu_category_id, name, menu_item_list }) => ({
         categoryId: menu_category_id,
