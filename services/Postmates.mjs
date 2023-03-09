@@ -224,7 +224,7 @@ class Postmates extends Service {
     }
   }
 
-  /* Get store information
+  /* Get store information WRITTEN BY ERIC CHHOUR
    * @param {String} contains the restraunt ID (Should come from search results as storeUUID)
    * @return {Array} an array of [storeName, storeID, storeImage, storeHours,
    * menu[category[items[name, description, price, image]]]], or HTTPResponseError
@@ -291,14 +291,19 @@ class Postmates extends Service {
       throw new HTTPResponseError(res);
     }
   }
+  /*************************************************************/
+  /*************************************************************/
+  /************EVERYTHING BELOW HERE WAS WRITTEN****************/
+  /**********************BY ERIC CHHOUR*************************/
 
-  /*Initialize cart
+  /*Initialize cart WRITTEN BY ERIC CHHOUR
    * @param {item} item to add
    * @param {itemQuantity} # of that item to add to cart
    * @param cookies {Object} cookie to pass in location data
    * @return {Object} raw cart information
+   * NOTE: Shopping cart items is hardcoded for testing purposes
    */
-  async createCart(item, itemQuantity) {
+  async createCart(item, itemQuantity, cookies) {
     const generatedItemUUID = uuidv4();
     const res = await fetch("https://postmates.com/api/createDraftOrderV2", {
       method: "POST",
@@ -335,70 +340,7 @@ class Postmates extends Service {
             price: 509,
             title: "McCrispy",
             quantity: 1,
-            customizations: {
-              "34f335ca-5b1b-51ec-b937-6920d61d82f7+0": [
-                {
-                  uuid: "72daf202-d88b-5f31-86b6-d1794a8cdef2",
-                  price: 0,
-                  quantity: 1,
-                  title: "Butter",
-                  defaultQuantity: 1,
-                  quantityInfo: {
-                    chargeAbove: 1,
-                    refundBelow: 0,
-                  },
-                  customizationMeta: {
-                    title: "McCrispy Comes With",
-                    isPickOne: false,
-                  },
-                },
-                {
-                  uuid: "6105071c-75d3-5f57-9b92-d85e22fdbe27",
-                  price: 0,
-                  quantity: 1,
-                  title: "Crinkle Cut Pickle",
-                  defaultQuantity: 1,
-                  quantityInfo: {
-                    chargeAbove: 1,
-                    refundBelow: 0,
-                  },
-                  customizationMeta: {
-                    title: "McCrispy Comes With",
-                    isPickOne: false,
-                  },
-                },
-                {
-                  uuid: "7929218b-8bc8-5f25-a7aa-a9a8a2aab58e",
-                  price: 329,
-                  quantity: 1,
-                  title: "McCrispy Filet",
-                  defaultQuantity: 1,
-                  quantityInfo: {
-                    chargeAbove: 1,
-                    refundBelow: 0,
-                  },
-                  customizationMeta: {
-                    title: "McCrispy Comes With",
-                    isPickOne: false,
-                  },
-                },
-                {
-                  uuid: "1319ec54-546f-51fd-8de1-c46b8a9a7669",
-                  price: 0,
-                  quantity: 1,
-                  title: "Potato Roll",
-                  defaultQuantity: 1,
-                  quantityInfo: {
-                    chargeAbove: 1,
-                    refundBelow: 0,
-                  },
-                  customizationMeta: {
-                    title: "McCrispy Comes With",
-                    isPickOne: false,
-                  },
-                },
-              ],
-            },
+            customizations: {},
             imageURL:
               "https://d1ralsognjng37.cloudfront.net/a53f03d6-53c1-4f1b-970f-a974e5e23a08.jpeg",
             specialInstructions: "",
@@ -431,7 +373,12 @@ class Postmates extends Service {
     }
   }
 
-  //Needed to selct customizations
+  /*Get Item details nessecary to parse customizations WRITTEN BY ERIC CHHOUR
+   * @param {storeID} store UUID
+   * @param {sectionID} item's sectionUUID
+   * @param {subsectionID} item's sectionUUID
+   * @return {itemID} item's UUID
+   */
   async getItemDetails(storeID, sectionID, subsectionID, itemID) {
     const res = await fetch("https://postmates.com/api/getMenuItemV1", {
       method: "POST",
@@ -572,12 +519,8 @@ class Postmates extends Service {
           accept: "*/*",
           "accept-language": "en-US,en;q=0.9",
           "content-type": "application/json",
-          cookie:
-            "uev2.id.session=06c8babb-9865-4fff-a302-817d2437033b; uev2.ts.session=1677964283558; marketing_vistor_id=9b6efbc9-abbf-499a-9da0-891ae45380f0; uev2.unregisteredUserUuid=730c1a93-51fc-5dbb-984c-2df7a2586937; uev2.do=e3d793fb-14d2-4c64-92e8-d9953756452d; uev2.gosid=GOSID-3bef0dd3-ec75-4eda-8ec5-30fff06561c4; uev2.id.xp=ac1634ed-0bc3-442e-858e-f0a1cc815a54; dId=32ef5873-22f4-4b11-859c-6aad4eeeca2e; ",
           dnt: "1",
           origin: "https://postmates.com",
-          referer:
-            "https://postmates.com/store/mcdonalds-long-bch-bellflower-23rd/1Ptj50KcSyGfzGaIibnCIA/713aee91-516f-5c61-ae72-09e6a45bb6fd/d6148a20-ce10-568a-97ab-66a26573f6bb/fe6cac2d-8dff-52c3-9c61-668437078156",
           "sec-ch-ua":
             '"Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";v="110"',
           "sec-ch-ua-mobile": "?0",
