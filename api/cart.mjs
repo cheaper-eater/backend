@@ -43,4 +43,37 @@ const removeFromPostmatesCart = async (item) => {
     }
   }
 };
-export { createPostmatesCart, addPostmatesCart, removeFromPostmatesCart };
+
+const getItemDetails = async (item) => {
+  try {
+    const postmates = new Postmates();
+    return (await postmates.getItemDetails(item)).data;
+  } catch (e) {
+    if (e instanceof HTTPResponseError) {
+      return { error: await e.getError() };
+    } else {
+      console.error(e);
+    }
+  }
+};
+
+const getFee = async (item, cookies) => {
+  try {
+    const postmates = new Postmates();
+    return (await postmates.getFee(item, cookies)).data;
+  } catch (e) {
+    if (e instanceof HTTPResponseError) {
+      return { error: await e.getError() };
+    } else {
+      console.error(e);
+    }
+  }
+};
+
+export {
+  createPostmatesCart,
+  addPostmatesCart,
+  removeFromPostmatesCart,
+  getItemDetails,
+  getFee,
+};
