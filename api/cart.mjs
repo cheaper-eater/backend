@@ -18,7 +18,7 @@ const createPostmatesCart = async (item, itemQuantity) => {
   }
 };
 
-const addPostmatesCart = async (item) => {
+const addToPostmatesCart = async (item) => {
   try {
     const postmates = new Postmates();
     return (await postmates.addToCart(item)).data;
@@ -72,7 +72,7 @@ const getFee = async (item, cookies) => {
 
 export {
   createPostmatesCart,
-  addPostmatesCart,
+  addToPostmatesCart,
   removeFromPostmatesCart,
   getItemDetails,
   getFee,

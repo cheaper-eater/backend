@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   createPostmatesCart,
-  addPostmatesCart,
+  addToPostmatesCart,
   removeFromPostmatesCart,
   getItemDetails,
   getFee,
@@ -13,8 +13,8 @@ cartRouter.post("/createPostmatesCart", async (req, res) => {
   res.json(await createPostmatesCart(req.body));
 });
 
-cartRouter.post("/addPostmatesCart", async (req, res) => {
-  res.json(await addPostmatesCart(req.body));
+cartRouter.post("/addToPostmatesCart", async (req, res) => {
+  res.json(await addToPostmatesCart(req.body));
 });
 
 cartRouter.post("/removeFromPostmatesCart", async (req, res) => {

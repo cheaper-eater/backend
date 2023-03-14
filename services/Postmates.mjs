@@ -219,7 +219,7 @@ class Postmates extends Service {
     };
   }
 
-  /* Get store information WRITTEN BY ERIC CHHOUR
+  /* Get store information
    * @param {String} contains the restraunt ID (Should come from search results as storeUUID)
    * @return {Array} an array of [storeName, storeID, storeImage, storeHours,
    * menu[category[items[name, description, price, image]]]], or HTTPResponseError
@@ -283,12 +283,11 @@ class Postmates extends Service {
     };
   }
 
-  /*Initialize cart
-   * @param {item} item to add
-   * @param {itemQuantity} # of that item to add to cart
-   * @param cookies {Object} cookie to pass in location data
-   * @return {Object} raw cart information
-   * NOTE: Shopping cart items is hardcoded for testing purposes
+  /*Initialize Postmates cart.
+   * @params itemID->itemName are obtained from getStore() and getItemDetails().
+   * @param {itemQuantity} Number of the item to add to the cart.
+   * @param cookies {Object} cookie to pass in location data.
+   * @return {Object} Raw cart information response.
    */
   async createCart(
     {
@@ -375,9 +374,9 @@ class Postmates extends Service {
   }
 
   /* Get Item details nessecary to access customizations
-   * @param item {storeID, sectionID, subsectionID, itemID}
+   * @param storeID->itemID are obtained from getStore().
    */
-  async getItemDetails({storeID, sectionID, subsectionID, itemID}) {
+  async getItemDetails({ storeID, sectionID, subsectionID, itemID }) {
     const res = await fetch("https://postmates.com/api/getMenuItemV1", {
       method: "POST",
       headers: {
@@ -416,9 +415,11 @@ class Postmates extends Service {
   }
 
   /* Add Item to Postmates Cart
-   * @param Paramters are consistent with variable names obtained from parsePostmatesStore() and createCart()
-   *
+   *@param draftOrderID {Object} is obtained from createCart().
+   *@param cartID {Object} is obtained from createCart().
+   @param itemID->image is obtained from getMenu() and getItemDetails().
    */
+
   async addToCart({
     draftOrderID,
     cartID,
@@ -475,7 +476,6 @@ class Postmates extends Service {
     if (res.ok) {
       return {
         data: await res.json(),
-        responseCookies: this.cookiesToJson(res.headers.raw()["set-cookie"]),
       };
     } else {
       throw new HTTPResponseError(res);
@@ -535,36 +535,6 @@ class Postmates extends Service {
         }),
       }
     );
-    console.log(
-      "BODY:",
-      JSON.stringify({
-        payloadTypes: [
-          "fulfillmentPromotionInfo",
-          "deliveryOptInInfo",
-          "eta",
-          "fareBreakdown",
-          "upfrontTipping",
-          "basketSizeTracker",
-          "total",
-          "cartItems",
-          "subtotal",
-          "promotion",
-          "disclaimers",
-          "orderConfirmations",
-          "passBanner",
-          "taxProfiles",
-          "addressNudge",
-          "basketSize",
-          "complements",
-          "messageBanner",
-          "merchantMembership",
-          "restrictedItems",
-          "timeWindowPicker",
-        ],
-        isGroupOrder: false,
-        draftOrderUUID: draftOrderID, //Only thing we need to pass in, comes from createCart
-      })
-    );
     if (res.ok) {
       return {
         data: await res.json(),
@@ -579,7 +549,7 @@ class Postmates extends Service {
    * @param item {cartID, draftOrderID, itemsRemovedID, storeID}
    * @return JSON response from Postmates ("status": "success"),
    */
-  async removeItem(item) {
+  async removeItem(cartID, draftOrderID, itemsRemovedID, storeID) {
     const res = await fetch(
       "https://postmates.com/api/removeItemsFromDraftOrderV2",
       {
@@ -603,17 +573,16 @@ class Postmates extends Service {
           "x-csrf-token": "x",
         },
         body: JSON.stringify({
-          cartUUID: item.cartID,
-          draftOrderUUID: item.draftOrderID,
-          shoppingCartItemUUIDs: [item.itemsRemovedID],
-          storeUUID: item.storeID,
+          cartUUID: cartID,
+          draftOrderUUID: draftOrderID,
+          shoppingCartItemUUIDs: [itemsRemovedID],
+          storeUUID: storeID,
         }),
       }
     );
     if (res.ok) {
       return {
         data: await res.json(),
-        // responseCookies: this.cookiesToJson(res.headers.raw()["set-cookie"]),
       };
     } else {
       throw new HTTPResponseError(res);
