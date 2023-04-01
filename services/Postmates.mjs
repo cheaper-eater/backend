@@ -1,7 +1,6 @@
 import { env } from "node:process";
 import { v4 as uuidv4 } from "uuid";
 import fetch from "node-fetch";
-import { HTTPResponseError } from "../errors/http.mjs";
 import Service from "./Service.mjs";
 
 class Postmates extends Service {
@@ -473,7 +472,7 @@ class Postmates extends Service {
     };
   }
 
-   /* Returns the fee for the cart
+  /* Returns the fee for the cart
    * @param item {draftOrderID} is obtained from createCart()., cookies {Object}
    * @return JSON object with cart subtotal and fee.
    */
