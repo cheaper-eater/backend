@@ -212,6 +212,124 @@ class Grubhub extends Service {
       })
     ).json();
   }
-}
 
+  /*Creates a Grubhub cart.
+   * @return {Object} json object containing cartID
+   */
+  async createCart() {
+    return await (
+      await this.callServiceAPI(async () => {
+        return fetch("https://api-gtm.grubhub.com/carts", {
+          method: "POST",
+          headers: {
+            authority: "api-gtm.grubhub.com",
+            accept: "application/json",
+            "accept-language": "en-US,en;q=0.5",
+            authorization: `Bearer ${(await this.getToken()).accessToken}`,
+            origin: "https://www.grubhub.com",
+            referer: "https://www.grubhub.com/",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "sec-gpc": "1",
+            "user-agent":
+              "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36",
+          },
+          body: JSON.stringify({
+            brand: "GRUBHUB",
+            experiments: [
+              "IGNORE_MINIMUM_TIP_REQUIREMENT",
+              "LINEOPTION_ENHANCEMENTS",
+            ],
+            cart_attributes: [],
+          }),
+        });
+      })
+    ).json();
+  }
+
+  /*Creates a Grubhub cart.
+   * @param storeId the store id
+   * @param itemId the item id
+   * @return {Object} json object containing cartID
+   */
+  async getItemDetails(storeId, itemId) {
+    return await (
+      await this.callServiceAPI(async () => {
+        let endpoint = new URL(
+          `https://api-gtm.grubhub.com/restaurants/${storeId}/menu_items/${itemId}`
+        );
+
+        const params = new URLSearchParams({
+          //time: Date.getTime(), Not needed I think, take sin 13 digit epoch time but works w/o
+          hideUnavailableMenuItems: true,
+          orderType: "standard",
+          version: 4,
+          location: `POINT(${location.longitude} ${location.latitude})`,
+        });
+
+        endpoint.search = params;
+        return fetch(endpoint, {
+          method: "GET",
+          headers: {
+            authority: "api-gtm.grubhub.com",
+            accept: "application/json",
+            "accept-language": "en-US,en;q=0.9",
+            authorization:`Bearer ${(await this.getToken()).accessToken}`,
+            "cache-control": "no-cache",
+            dnt: "1",
+            "if-modified-since": "0",
+            origin: "https://www.grubhub.com",
+            referer: "https://www.grubhub.com/",
+            "sec-ch-ua":
+              '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "user-agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36",
+          },
+        });
+      })
+    ).json();
+  }
+
+  /*Returns contents of Gruhub cart + fees; basically checkout page.
+   * @param storeId the store id
+   * @param itemId the item id
+   * @return {Object} json object containing cartID
+   */
+  async getCartFee(cartId) {
+    return await (
+      await this.callServiceAPI(async () => {
+        let endpoint = new URL(`https://api-gtm.grubhub.com/carts/${cartId}`);
+        return fetch(endpoint, {
+          method: "GET",
+          headers: {
+            authority: "api-gtm.grubhub.com",
+            accept: "application/json",
+            "accept-language": "en-US,en;q=0.9",
+            authorization: `Bearer ${(await this.getToken()).accessToken}`,
+            "cache-control": "no-cache",
+            dnt: "1",
+            "if-modified-since": "0",
+            origin: "https://www.grubhub.com",
+            referer: "https://www.grubhub.com/",
+            "sec-ch-ua":
+              '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "user-agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36",
+          },
+        });
+      })
+    ).json();
+  }
+}
 export default Grubhub;
