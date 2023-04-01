@@ -304,7 +304,7 @@ class Postmates extends Service {
     cookies
   ) {
     const generatedItemUUID = uuidv4();
-    const res = await fetch("https://postmates.com/api/createDraftOrderV2", {
+    const res = await this.callServiceAPI(() =>("https://postmates.com/api/createDraftOrderV2", {
       method: "POST",
       headers: {
         authority: "postmates.com",
