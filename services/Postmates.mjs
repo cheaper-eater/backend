@@ -304,114 +304,110 @@ class Postmates extends Service {
     cookies
   ) {
     const generatedItemUUID = uuidv4();
-    const res = await this.callServiceAPI(() =>("https://postmates.com/api/createDraftOrderV2", {
-      method: "POST",
-      headers: {
-        authority: "postmates.com",
-        accept: "*/*",
-        "accept-language": "en-US,en;q=0.9",
-        "content-type": "application/json",
-        cookie: this.CookiesObjectToString(cookies),
-        dnt: "1",
-        origin: "https://postmates.com",
-        "sec-ch-ua":
-          '"Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";v="110"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
-        "user-agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
-        "x-csrf-token": "x",
-      },
-      body: JSON.stringify({
-        isMulticart: false,
-        shoppingCartItems: [
-          {
-            uuid: itemID,
-            shoppingCartItemUuid: generatedItemUUID,
-            storeUuid: storeID,
-            sectionUuid: sectionID,
-            subsectionUuid: subsectionID,
-            price: priceAsCents,
-            title: itemName,
-            quantity: itemQuantity,
-            customizations: customizations,
-            imageURL: imageURL,
-            specialInstructions: "",
-            itemId: null,
+    const res = await this.callServiceAPI(() =>
+      fetch("https://postmates.com/api/createDraftOrderV2", {
+        method: "POST",
+        headers: {
+          authority: "postmates.com",
+          accept: "*/*",
+          "accept-language": "en-US,en;q=0.9",
+          "content-type": "application/json",
+          cookie: this.CookiesObjectToString(cookies),
+          dnt: "1",
+          origin: "https://postmates.com",
+          "sec-ch-ua":
+            '"Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";v="110"',
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": '"Windows"',
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-origin",
+          "user-agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+          "x-csrf-token": "x",
+        },
+        body: JSON.stringify({
+          isMulticart: false,
+          shoppingCartItems: [
+            {
+              uuid: itemID,
+              shoppingCartItemUuid: generatedItemUUID,
+              storeUuid: storeID,
+              sectionUuid: sectionID,
+              subsectionUuid: subsectionID,
+              price: priceAsCents,
+              title: itemName,
+              quantity: itemQuantity,
+              customizations: customizations,
+              imageURL: imageURL,
+              specialInstructions: "",
+              itemId: null,
+            },
+          ],
+          useCredits: true,
+          extraPaymentProfiles: [],
+          promotionOptions: {
+            autoApplyPromotionUUIDs: [],
+            selectedPromotionInstanceUUIDs: [],
+            skipApplyingPromotion: false,
           },
-        ],
-        useCredits: true,
-        extraPaymentProfiles: [],
-        promotionOptions: {
-          autoApplyPromotionUUIDs: [],
-          selectedPromotionInstanceUUIDs: [],
-          skipApplyingPromotion: false,
-        },
-        deliveryTime: {
-          asap: true,
-        },
-        deliveryType: "ASAP",
-        currencyCode: "USD",
-        interactionType: "door_to_door",
-        checkMultipleDraftOrdersCap: false,
-        isGuestOrder: true,
-        businessDetails: {
-          profileType: "personal",
-        },
-      }),
-    });
-    if (res.ok) {
-      return {
-        data: await res.json(),
-        responseCookies: this.cookiesToJson(res.headers.raw()["set-cookie"]),
-      };
-    } else {
-      throw new HTTPResponseError(res);
-    }
+          deliveryTime: {
+            asap: true,
+          },
+          deliveryType: "ASAP",
+          currencyCode: "USD",
+          interactionType: "door_to_door",
+          checkMultipleDraftOrdersCap: false,
+          isGuestOrder: true,
+          businessDetails: {
+            profileType: "personal",
+          },
+        }),
+      })
+    );
+    return {
+      data: await res.json(),
+      responseCookies: this.cookiesToJson(res.headers.raw()["set-cookie"]),
+    };
   }
 
   /* Get Item details nessecary to access customizations
    * @param storeID->itemID are obtained from getStore().
    */
   async getItemDetails({ storeID, sectionID, subsectionID, itemID }) {
-    const res = await fetch("https://postmates.com/api/getMenuItemV1", {
-      method: "POST",
-      headers: {
-        authority: "postmates.com",
-        accept: "*/*",
-        "accept-language": "en-US,en;q=0.9",
-        "content-type": "application/json",
-        dnt: "1",
-        origin: "https://postmates.com",
-        "sec-ch-ua":
-          '"Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";vx ="110"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
-        "user-agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
-        "x-csrf-token": "x",
-      },
-      body: JSON.stringify({
-        itemRequestType: "ITEM",
-        storeUuid: storeID,
-        sectionUuid: sectionID,
-        subsectionUuid: subsectionID,
-        menuItemUuid: itemID,
-      }),
-    });
-    if (res.ok) {
-      return {
-        data: await res.json(),
-      };
-    } else {
-      throw new HTTPResponseError(res);
-    }
+    const res = await this.callServiceAPI(() =>
+      fetch("https://postmates.com/api/getMenuItemV1", {
+        method: "POST",
+        headers: {
+          authority: "postmates.com",
+          accept: "*/*",
+          "accept-language": "en-US,en;q=0.9",
+          "content-type": "application/json",
+          dnt: "1",
+          origin: "https://postmates.com",
+          "sec-ch-ua":
+            '"Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";vx ="110"',
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": '"Windows"',
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-origin",
+          "user-agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+          "x-csrf-token": "x",
+        },
+        body: JSON.stringify({
+          itemRequestType: "ITEM",
+          storeUuid: storeID,
+          sectionUuid: sectionID,
+          subsectionUuid: subsectionID,
+          menuItemUuid: itemID,
+        }),
+      })
+    );
+    return {
+      data: await res.json(),
+    };
   }
 
   /* Add Item to Postmates Cart
@@ -434,9 +430,8 @@ class Postmates extends Service {
     image,
   }) {
     const generatedItemUUID = uuidv4();
-    const res = await fetch(
-      "https://postmates.com/api/addItemsToDraftOrderV2",
-      {
+    const res = await this.callServiceAPI(() =>
+      fetch("https://postmates.com/api/addItemsToDraftOrderV2", {
         method: "POST",
         headers: {
           authority: "postmates.com",
@@ -471,21 +466,20 @@ class Postmates extends Service {
           shouldUpdateDraftOrderMetadata: false,
           storeUUID: storeID,
         }),
-      }
+      })
     );
-    if (res.ok) {
-      return {
-        data: await res.json(),
-      };
-    } else {
-      throw new HTTPResponseError(res);
-    }
+    return {
+      data: await res.json(),
+    };
   }
 
+   /* Returns the fee for the cart
+   * @param item {draftOrderID} is obtained from createCart()., cookies {Object}
+   * @return JSON object with cart subtotal and fee.
+   */
   async getFee({ draftOrderID }, cookies) {
-    const res = await fetch(
-      "https://postmates.com/api/getCheckoutPresentationV1",
-      {
+    const res = await this.callServiceAPI(() =>
+      fetch("https://postmates.com/api/getCheckoutPresentationV1", {
         method: "POST",
         headers: {
           authority: "postmates.com",
@@ -533,16 +527,12 @@ class Postmates extends Service {
           isGroupOrder: false,
           draftOrderUUID: draftOrderID, //Only thing we need to pass in, comes from createCart
         }),
-      }
+      })
     );
-    if (res.ok) {
-      return {
-        data: await res.json(),
-        responseCookies: this.cookiesToJson(res.headers.raw()["set-cookie"]),
-      };
-    } else {
-      throw new HTTPResponseError(res);
-    }
+    return {
+      data: await res.json(),
+      responseCookies: this.cookiesToJson(res.headers.raw()["set-cookie"]),
+    };
   }
 
   /* Remove an item from the cart.
@@ -550,9 +540,8 @@ class Postmates extends Service {
    * @return JSON response from Postmates ("status": "success"),
    */
   async removeItem(cartID, draftOrderID, itemsRemovedID, storeID) {
-    const res = await fetch(
-      "https://postmates.com/api/removeItemsFromDraftOrderV2",
-      {
+    const res = await this.callServiceAPI(() =>
+      fetch("https://postmates.com/api/removeItemsFromDraftOrderV2", {
         method: "POST",
         headers: {
           authority: "postmates.com",
@@ -578,15 +567,12 @@ class Postmates extends Service {
           shoppingCartItemUUIDs: [itemsRemovedID],
           storeUUID: storeID,
         }),
-      }
+      })
     );
-    if (res.ok) {
-      return {
-        data: await res.json(),
-      };
-    } else {
-      throw new HTTPResponseError(res);
-    }
+
+    return {
+      data: await res.json(),
+    };
   }
 }
 export default Postmates;
