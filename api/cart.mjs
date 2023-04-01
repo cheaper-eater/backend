@@ -1,9 +1,5 @@
 import Postmates from "../services/Postmates.mjs";
 
-/* Search postmates
- * @param {item} postmates item{} used to initailize cart
- * @return {object} either success json or error
- */
 const createPostmatesCart = async (item, itemQuantity) => {
   const postmates = new Postmates();
   return (await postmates.createCart(item, itemQuantity)).data;
