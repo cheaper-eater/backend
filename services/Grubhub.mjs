@@ -213,42 +213,55 @@ class Grubhub extends Service {
     ).json();
   }
 
-
   /************************ ALL ITEMS BELOW HERE WAS WRITTEN BY  ERIC CHHOUR ***********************/
   /*Creates a Grubhub cart.
    * @return {Object} json object containing cartID, a cartID in URL form,
    * and "already_exists: false"
    */
   async createCart() {
-    return await (
-      await this.callServiceAPI(async () => {
-        return fetch("https://api-gtm.grubhub.com/carts", {
-          method: "POST",
-          headers: {
-            authority: "api-gtm.grubhub.com",   
-            accept: "application/json",
-            "accept-language": "en-US,en;q=0.5",
-            authorization: `Bearer ${(await this.getToken()).accessToken}`,
-            origin: "https://www.grubhub.com",
-            referer: "https://www.grubhub.com/",
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-site",
-            "sec-gpc": "1",
-            "user-agent":
-              "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36",
-          },
-          body: JSON.stringify({
-            brand: "GRUBHUB",
-            experiments: [
-              "IGNORE_MINIMUM_TIP_REQUIREMENT",
-              "LINEOPTION_ENHANCEMENTS",
-            ],
-            cart_attributes: [],
-          }),
-        });
-      })
-    ).json();
+    const res = await fetch("https://api-gtm.grubhub.com/carts", {
+      method: "POST",
+      headers: {
+        authority: "api-gtm.grubhub.com",
+        accept: "application/json",
+        "accept-language": "en-US,en;q=0.9",
+        authorization: `Bearer ${(await this.getToken()).accessToken}`,
+        "cache-control": "no-cache",
+        "content-type": "application/json;charset=UTF-8",
+        dnt: "1",
+        "if-modified-since": "0",
+        origin: "https://www.grubhub.com",
+        "perimeter-x":
+          "eyJ1IjoiOWM1NWRjNDAtZDBhNC0xMWVkLTg4ZWMtODlhYjMwODg1Nzk0IiwidiI6IjU3OGYwOTY0LWQwYTQtMTFlZC1iMjcxLTU1NTU3NTVhNGU2NiIsInQiOjE2ODAzNjQ4Nzk2NzEsImgiOiI3ODQyNTY5ZjA3NTM5YmEyMWY1MTQ5MzlhZTU5N2MzMGIyNmZkM2Q4ZmUxYWQ1N2FjYTZmYmFjMTc2OTFiYjY4In0=",
+        referer: "https://www.grubhub.com/",
+        "sec-ch-ua":
+          '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36",
+        cookie:
+          "_pxhd=rUZJbT3OpAuBZY%2FReudjWMMCUtIf9NSJ-rM2ew931pgp4oOi2GJHh0K3OmZrM4UmZRIJ8%2FgYjkhCSMZdmc-Dcw%3D%3D%3ADnYO4GJierQXkwZNCG2ls-wwLxCbVYux6KVs2QRuluw-hCxTioj82uzifoa7zG%2FhxIc8-rCv9MBRSJfJXh6lX4UCeCvLgMeOx5qH4KT1JF8%3D; ",
+      },
+      body: JSON.stringify({
+        brand: "GRUBHUB",
+        experiments: [
+          "IGNORE_MINIMUM_TIP_REQUIREMENT",
+          "LINEOPTION_ENHANCEMENTS",
+        ],
+        cart_attributes: [],
+      }),
+    });
+    if (res.ok) {
+      return {
+        data: await res.json(),
+      };
+    } else {
+      throw new HTTPResponseError(res);
+    }
   }
 
   /*Creates a Grubhub cart.
@@ -277,7 +290,7 @@ class Grubhub extends Service {
         authority: "api-gtm.grubhub.com",
         accept: "application/json",
         "accept-language": "en-US,en;q=0.9",
-        authorization: "Bearer 546a958b-13ba-4b53-8a2a-14075d983f30",
+        authorization: `Bearer ${(await this.getToken()).accessToken}`,
         "cache-control": "no-cache",
         dnt: "1",
         "if-modified-since": "0",
