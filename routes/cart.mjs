@@ -5,6 +5,11 @@ import {
   removeFromPostmatesCart,
   getItemDetails,
   getFee,
+  addToGrubhubCart,
+  getGrubhubFee,
+  removeFromGrubhubCart,
+  getGrubhubDetails,
+  createGrubhubCart,
 } from "../api/cart.mjs";
 
 const cartRouter = Router();
@@ -27,6 +32,28 @@ cartRouter.post("/getItemDetails", async (req, res) => {
 
 cartRouter.post("/getFee", async (req, res) => {
   res.json(await getFee(req.body));
+});
+
+//Grubhub Routes
+
+cartRouter.post("/addToGrubhubCart", async (req, res) => {
+  res.json(await addToGrubhubCart(req.body));
+});
+
+cartRouter.post("/removeFromGrubhubCart", async (req, res) => {
+  res.json(await removeFromGrubhubCart(req.body));
+});
+
+cartRouter.post("/getGrubhubFee", async (req, res) => {
+  res.json(await getGrubhubFee(req.body));
+});
+
+cartRouter.post("/getGrubhubDetails", async (req, res) => {
+  res.json(await getGrubhubDetails(req.body));
+});
+
+cartRouter.post("/createGrubhubCart", async (req, res) => {
+  res.json(await createGrubhubCart(req.body));
 });
 
 export default cartRouter;
