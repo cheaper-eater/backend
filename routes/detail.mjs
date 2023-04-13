@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { detailLocation, detailStore } from "../api/detail.mjs";
+import { detailLocation, detailStore, detailItem } from "../api/detail.mjs";
 
 const detailRouter = Router();
 
@@ -16,6 +16,10 @@ detailRouter.post("/store", async (req, res) => {
       }))
     )
   );
+});
+
+detailRouter.post("/item", async (req, res) => {
+  res.json(await detailItem());
 });
 
 export default detailRouter;
