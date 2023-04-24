@@ -376,7 +376,7 @@ const buildCustomizationOptionsRecursively = (
  * @return {Object} details.grubhub original grubhub items
  * @return {Object} details.doordash original doordash items
  */
-const detailItem = async (itemIds) => {
+const detailItem = async () => {
   // modeled after postmates item detail with field applicable
   // to all other services
   let item = {
