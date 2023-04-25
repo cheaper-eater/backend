@@ -213,7 +213,6 @@ class Grubhub extends Service {
     ).json();
   }
 
-  /************************ ALL ITEMS BELOW HERE WAS WRITTEN BY  ERIC CHHOUR ***********************/
   /*Creates a Grubhub cart.
    * @return {Object} json object containing cartID, a cartID in URL form,
    * and "already_exists: false"
@@ -264,14 +263,14 @@ class Grubhub extends Service {
     }
   }
 
-  /*Creates a Grubhub cart.
+  /*Get item details + customizastions
    * @param storeId the store id
    * @param itemId the item id
-   * @return {Object} json object containing cartID
    * @param {String} payload.location.latitude location latitude
    * @param {String} payload.location.longitude location longitude
+   * @return {Object} json object containing cartID
    */
-  async getItemDetails({ storeId, itemId /*, location*/ }) {
+  async getItemDetails({ storeId, itemId, location }) {
     let endpoint = new URL(
       `https://api-gtm.grubhub.com/restaurants/${storeId}/menu_items/${itemId}`
     );
@@ -280,8 +279,8 @@ class Grubhub extends Service {
       hideUnavailableMenuItems: true,
       orderType: "standard",
       version: 4,
-      //location: `POINT(${location.longitude} ${location.latitude})`,
-      location: `POINT(-118.11377717 33.78110885)`,
+      location: `POINT(${location.longitude} ${location.latitude})`,
+      //location: `POINT(-118.11377717 33.78110885)`,
     });
     endpoint.search = params;
     const res = await fetch(endpoint, {

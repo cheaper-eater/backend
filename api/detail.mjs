@@ -282,4 +282,9 @@ const detailStore = async (serviceIds) => {
   });
 };
 
-export { detailLocation, detailStore };
+const detailNutrition = async (item) => {
+  const postmates = new Postmates();
+  return (await postmates.getNutrition(item)).data;
+};
+
+export { detailLocation, detailStore, detailNutrition };

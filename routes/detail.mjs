@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { detailLocation, detailStore } from "../api/detail.mjs";
+import {
+  detailLocation,
+  detailStore,
+  detailNutrition,
+} from "../api/detail.mjs";
 
 const detailRouter = Router();
 
@@ -16,6 +20,10 @@ detailRouter.post("/store", async (req, res) => {
       }))
     )
   );
+});
+
+detailRouter.post("/nutrition", async (req, res) => {
+  res.json(await detailNutrition(req.body));
 });
 
 export default detailRouter;
