@@ -574,5 +574,28 @@ class Postmates extends Service {
       data: await res.json(),
     };
   }
+
+  /* Search itemName on Edamam API
+   * @param itemName is a JSON containing a string called "itemName"
+   * @return JSON response from Edamam API
+   */
+  async getNutrition(itemName) {
+    const API_ID = "74a7395c";
+    const API_KEY = "5a8f495c6c3e001a6fc2f3da84488f7b	";
+    const itemString = JSON.stringify(itemName);
+    const url = `https://api.edamam.com/api/food-database/v2/parser?app_id=${API_ID}&app_key=${API_KEY}&ingr=${encodeURIComponent(
+      itemString
+    )}&nutrition-type=logging`;
+
+    const res = await this.callServiceAPI(() =>
+      fetch(url, {
+        method: "GET",
+      })
+    );
+
+    return {
+      data: await res.json(),
+    };
+  }
 }
 export default Postmates;
