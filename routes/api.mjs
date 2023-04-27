@@ -6,7 +6,6 @@ import searchRouter from "./search.mjs";
 import autocompleteRouter from "./autocomplete.mjs";
 import popularPicksRouter from "./popularPicks.mjs";
 import dbRouter from "./db.mjs";
-import cartRouter from "./cart.mjs";
 
 const apiRouter = Router();
 
@@ -17,5 +16,5 @@ apiRouter.use("/autocomplete", autocompleteRouter);
 apiRouter.use("/search", searchRouter);
 apiRouter.use("/db", dbRouter);
 apiRouter.use("/popularPicks", popularPicksRouter);
-apiRouter.use("/cart", cartRouter);
+
 export default apiRouter;
