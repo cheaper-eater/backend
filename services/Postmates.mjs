@@ -225,13 +225,13 @@ class Postmates extends Service {
   async getStore(restarauntID) {
     return await (
       await this.callServiceAPI(() =>
-        fetch("https://postmates.com/api/getStoreV1", {
+        fetch("https://postmates.com/_p/api/getStoreV1", {
           method: "POST",
           headers: {
             authority: "postmates.com",
             accept: "*/*",
             "content-type": "application/json",
-            dnt: "1",
+            "user-agent": this.commonHeaders["user-agent"],
             "x-csrf-token": "x",
           },
           body: JSON.stringify({ storeUuid: restarauntID }),
