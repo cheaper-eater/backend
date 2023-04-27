@@ -3,6 +3,15 @@ import Grubhub from "../services/Grubhub.mjs";
 import Doordash from "../services/Doordash.mjs";
 import { HTTPResponseError } from "../errors/http.mjs";
 
+// temp data
+import pItem from "./p_item.mjs";
+import ghItem from "./gh_item.mjs";
+import ddItem from "./dd_item.mjs";
+
+const POSTMATES = "postmates";
+const GRUBHUB = "grubhub";
+const DOORDASH = "doordash";
+
 /* retrieve detailed location information such as latitude / longitude data
  * @param {Object} locationData the location datato get more detailed info for
  * this data can be retried from /api/autocomplete/location
@@ -230,6 +239,293 @@ const addItemToMenu = ({ categoryItems, item, service }) => {
   };
 };
 
+/* Add service imtem to merged item object
+ * @param {Object} details of item to add
+ * @param {Object} item of merged items
+ */
+const addServiceItemToMergedItem = (details, item) => {
+  const { id, price, title, description, service } = details;
+
+  item.id[service] = id;
+  item.price[service] = price;
+
+  if (!item?.title) {
+    item.title = title;
+  }
+  if (!item?.description) {
+    item.itemDescription = description;
+  }
+};
+
+/* Add customization option to merged item of customization options
+ * @param {Object} details of item to add
+ * @param {Object} customization  to add to
+ */
+const addCustomizationToMergedCustomization = (details, customization) => {
+  const { maxPermitted, minPermitted, title, id, options, service } = details;
+  if (!customization?.title) {
+    const data = {
+      maxPermitted: maxPermitted,
+      minPermitted: minPermitted,
+      title: title,
+      ids: { postmates: null, grubhub: null, doordash: null },
+      options: options,
+      services: [],
+    };
+    data.services.push(service);
+    data.ids[service] = id;
+    customization[title] = data;
+  }
+};
+
+/* Recursively build (merge) customiztion options for
+ * cascading customiztion options
+ * @param {Object} customizationOptions the customization optsion to parse
+ * @param {String} customizationOptionsName the name of the field that contains
+ * the customization options
+ * @param {String} service the service for this customiztion option
+ * @return {Array} list of merged customiztion options
+ */
+const buildCustomizationOptionsRecursively = (
+  customizationOptions,
+  customizationOptionsName,
+  service
+) => {
+  let formatedOptions = {};
+  let generalCustomization = {};
+
+  for (const customization of customizationOptions) {
+    switch (service) {
+      case POSTMATES: {
+        const { maxPermitted, minPermitted, title, uuid, price } =
+          customization;
+        generalCustomization = {
+          maxPermitted: maxPermitted,
+          minPermitted: minPermitted,
+          title: title,
+          id: uuid,
+          price: price,
+        };
+        break;
+      }
+      case GRUBHUB: {
+        const {
+          min_choice_options,
+          max_choice_options,
+          price: { amount },
+          description,
+          id,
+        } = customization;
+        generalCustomization = {
+          maxPermitted: max_choice_options,
+          minPermitted: min_choice_options,
+          title: description,
+          id: id,
+          price: amount,
+        };
+        break;
+      }
+      case DOORDASH: {
+        const { maxNumOptions, minNumOptions, unitAmount, name, id } =
+          customization;
+        generalCustomization = {
+          maxPermitted: maxNumOptions,
+          minPermitted: minNumOptions,
+          title: name,
+          id: id,
+          price: unitAmount,
+        };
+        break;
+      }
+    }
+
+    const { maxPermitted, minPermitted, title, id, price } =
+      generalCustomization;
+    let op = { ids: { postmates: null, grubhub: null, doordash: null } };
+
+    op.maxPermitted = maxPermitted;
+    op.minPermitted = minPermitted;
+    op.title = title;
+    op.price = price;
+    op.ids[service] = id;
+
+    if (
+      customization[customizationOptionsName] &&
+      customization[customizationOptionsName].length > 0
+    ) {
+      op.options[title] = {
+        ...buildCustomizationOptionsRecursively(
+          customization[customizationOptionsName],
+          customizationOptionsName,
+          service
+        ),
+      };
+    }
+    formatedOptions[title] = op;
+  }
+
+  // converting data to final form - after merge (array of customization options)
+  return Object.values(formatedOptions).map((o) => o);
+};
+
+/* Get details for an inten
+ * @param {Array} array of items ids
+ * @return {Object} details merged service item details + originals service items
+ * @return {Object} details.merged merged service items
+ * @return {Object} details.postmates original postmates items
+ * @return {Object} details.grubhub original grubhub items
+ * @return {Object} details.doordash original doordash items
+ */
+const detailItem = async () => {
+  // modeled after postmates item detail with field applicable
+  // to all other services
+  let item = {
+    title: "",
+    id: { postmates: null, grubhub: null, doordash: null },
+    itemDescription: "",
+    price: { postmates: 0, grubhub: 0, doordash: 0 },
+    customizationsList: {},
+  };
+
+  // promise.all() once api calls are available
+  const items = [
+    { serviceItem: pItem.data, service: "postmates" },
+    { serviceItem: ghItem, service: "grubhub" },
+    { serviceItem: ddItem.data.itemPage, service: "doordash" },
+  ];
+
+  for (const { service, serviceItem } of items) {
+    if (service === POSTMATES && serviceItem) {
+      const { uuid, price, title, itemDescription, customizationsList } =
+        serviceItem;
+
+      addServiceItemToMergedItem(
+        {
+          id: uuid,
+          price: price,
+          title: title,
+          description: itemDescription,
+          service: service,
+        },
+        item
+      );
+
+      for (const customization of customizationsList) {
+        const { maxPermitted, minPermitted, title, uuid, options } =
+          customization;
+
+        addCustomizationToMergedCustomization(
+          {
+            maxPermitted: maxPermitted,
+            minPermitted: minPermitted,
+            title: title,
+            id: uuid,
+            options: buildCustomizationOptionsRecursively(
+              options,
+              "option",
+              service
+            ),
+            service: service,
+          },
+          item.customizationsList
+        );
+
+        // next level of customization options
+      }
+    } else if (service === GRUBHUB && serviceItem) {
+      const {
+        id,
+        minimum_price_variation: { amount },
+        name,
+        description,
+        choice_category_list,
+      } = serviceItem;
+
+      addServiceItemToMergedItem(
+        {
+          id: id,
+          price: amount,
+          title: name,
+          description: description,
+          service: service,
+        },
+        item
+      );
+
+      for (const customization of choice_category_list) {
+        const {
+          max_choice_options,
+          min_choice_options,
+          id,
+          name,
+          choice_option_list,
+        } = customization;
+
+        addCustomizationToMergedCustomization(
+          {
+            maxPermitted: max_choice_options,
+            minPermitted: min_choice_options,
+            title: name,
+            id: id,
+            options: buildCustomizationOptionsRecursively(
+              choice_option_list,
+              "choice_category_list",
+              service
+            ),
+
+            service: service,
+          },
+          item.customizationsList
+        );
+      }
+    } else if (service === DOORDASH && serviceItem) {
+      const {
+        itemHeader: { id, name, unitAmount, description },
+        optionLists,
+      } = serviceItem;
+
+      addServiceItemToMergedItem(
+        {
+          id: id,
+          price: unitAmount,
+          title: name,
+          description: description,
+          service: service,
+        },
+        item
+      );
+
+      for (const customization of optionLists) {
+        const { maxNumOptions, minNumOptions, name, id, options } =
+          customization;
+
+        addCustomizationToMergedCustomization(
+          {
+            maxPermitted: maxNumOptions,
+            minPermitted: minNumOptions,
+            title: name,
+            id: id,
+            options: buildCustomizationOptionsRecursively(
+              options,
+              "optionLists",
+              service
+            ),
+            service: service,
+          },
+          item.customizationsList
+        );
+      }
+    }
+  }
+
+  let individualServiceItems = {};
+  for (const { service, serviceItem } of items) {
+    individualServiceItems[service] = serviceItem;
+  }
+
+  return { merged: item, ...individualServiceItems };
+};
+
 /*Get detail store information for the specified services
  * @param {Array} storeIds objects with services and corresponding
  * store ids ex: {"postmates": "id"}
@@ -327,4 +623,4 @@ const detailStore = async (serviceIds) => {
   });
 };
 
-export { detailLocation, detailStore };
+export { detailLocation, detailStore, detailItem };
