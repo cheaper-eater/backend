@@ -113,9 +113,9 @@ const searchDoordash = async (searchData) => {
   try {
     const doordash = new Doordash();
     return {
-      stores: (await doordash.search(searchData)).body[0].body.map(
+      stores: (await doordash.search(searchData)).body.map(
         ({
-          logging: { store_id, store_latitude, store_longitude },
+          logging: { store_id },
           text,
           images: {
             main: { uri },
@@ -124,10 +124,6 @@ const searchDoordash = async (searchData) => {
         }) => ({
           id: store_id,
           title: text.title,
-          location: {
-            latitude: store_latitude,
-            longitude: store_longitude,
-          },
           deliveryFee: +text.custom.modality_display_string
             .split(" ")[0]
             .replace("$", ""),
@@ -203,11 +199,15 @@ const search = async (searchData) => {
     decodeURIComponent(cookies["uev2.loc"])
   );
   searchData = { ...searchData, location: { latitude, longitude } };
-  const services = ["postmates", "grubhub", "doordash"];
+  const services = [
+    "postmates",
+    "grubhub",
+    // , "doordash"
+  ];
   const serviceSearchData = await Promise.all([
     searchPostmates(searchData, cookies),
     searchGrubhub(searchData),
-    searchDoordash(searchData),
+    // searchDoordash(searchData),
   ]);
 
   return {

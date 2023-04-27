@@ -99,7 +99,17 @@ const parseGrubhubStore = (storeData) => {
       zipCode: address.zipCode,
       country: address.country,
     },
-    fees: { deliveryFee: delivery_fee.amount },
+    fees: {
+      smallCartFeeCents: delivery_fee.delivery_fees[0].amount,
+      smallCartThresholdCents:
+        delivery_fee.delivery_fees[0].threshhold.threshhold,
+      driverBenefitsCents: delivery_fee.delivery_fees[1].amount,
+      serviceFeePercent: delivery_fee.delivery_fees[2].amount,
+      serviceFeeMinimumCents: delivery_fee.delivery_fees[2].amount,
+      serviceFeeMaximumCents: delivery_fee.delivery_fees[2].amount,
+      serviceFeeCents: delivery_fee.delivery_fees[3].amount,
+      salesTaxDecimal: delivery_fee.sales_tax,
+    },
     menu: menu_category_list.map(
       ({ menu_category_id, name, menu_item_list }) => ({
         categoryId: menu_category_id,
@@ -120,90 +130,35 @@ const parseGrubhubStore = (storeData) => {
   };
 };
 
-/*Parse DoorDash store data for mobile API
+/*Parse DoorDash store data
  * @param {Object} storeData the store data to parse
  * @return {Object} parsed store information
  */
 const parseDoorDashStore = (storeData) => {
-  let store = { menu: [] };
-
-  for (const module of storeData.display_modules) {
-    if (module.type == "store_header") {
-      const {
-        data: {
-          id,
-          name,
-          header_image: { url },
-          address: { street, city, display_address, country_shortname },
-        },
-      } = module;
-
-      store.id = id;
-      store.name = name;
-      store.image = url;
-      store.location = {
-        streetAddress: street,
-        city: city,
-        zipCode: display_address.split(",")[2].split(" ")[1],
-        country: country_shortname,
-      };
-    }
-    if (module.type == "menu_book") {
-      store.hours = module.data.menus[0].open_hours;
-    }
-    if (module.type == "item_list") {
-      const {
-        data: { name, content },
-      } = module;
-
-      store.menu.push({
-        categoryId: module.id,
-        category: name,
-        items: content.map(
-          ({ id, name, description, display_price, image }) => ({
-            id: id,
-            name: name,
-            description,
-            price: +display_price.replace("$", "") * 100,
-            image: image.url,
-          })
-        ),
-      });
-    }
-  }
-
-  return store;
+  const { info, menu } = storeData;
+  return {
+    restarauntName: info.name,
+    image: info.image[0],
+    logo: info.image[1],
+    location: {
+      streetAddress: info.address.streetAddress,
+      city: info.address.addressLocality,
+      state: info.address.addressRegion,
+      country: info.address.addressCountry,
+    },
+    coordinates: {
+      latitude: info.geo.latitude,
+      longitude: info.geo.longitude,
+    },
+    menu: menu.hasMenuSection[0].map((category) => ({
+      categoryName: category.name,
+      items: category.hasMenuItem.map((item) => ({
+        name: item.name,
+        price: item.offers.price,
+      })),
+    })),
+  };
 };
-
-/*Parse DoorDash store data for web crawler
- * @param {Object} storeData the store data to parse
- * @return {Object} parsed store information
- */
-//const parseDoorDashStore = (storeData) => {
-//  const { info, menu } = storeData;
-//  return {
-//    restarauntName: info.name,
-//    image: info.image[0],
-//    logo: info.image[1],
-//    location: {
-//      streetAddress: info.address.streetAddress,
-//      city: info.address.addressLocality,
-//      state: info.address.addressRegion,
-//      country: info.address.addressCountry,
-//    },
-//    coordinates: {
-//      latitude: info.geo.latitude,
-//      longitude: info.geo.longitude,
-//    },
-//    menu: menu.hasMenuSection[0].map((category) => ({
-//      categoryName: category.name,
-//      items: category.hasMenuItem.map((item) => ({
-//        name: item.name,
-//        price: item.offers.price,
-//      })),
-//    })),
-//  };
-//};
 
 /* Add category to menu
  * @param {Object} category
@@ -623,4 +578,9 @@ const detailStore = async (serviceIds) => {
   });
 };
 
-export { detailLocation, detailStore, detailItem };
+const detailNutrition = async (item) => {
+  const postmates = new Postmates();
+  return (await postmates.getNutrition(item)).data;
+};
+
+export { detailLocation, detailStore, detailItem, detailNutrition };
