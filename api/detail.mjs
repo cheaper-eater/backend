@@ -125,6 +125,7 @@ const parseGrubhubStore = (storeData) => {
  * @return {Object} parsed store information
  */
 const parseDoorDashStore = (storeData) => {
+  //return storeData;
   let store = { menu: [] };
 
   for (const module of storeData.display_modules) {
@@ -133,14 +134,15 @@ const parseDoorDashStore = (storeData) => {
         data: {
           id,
           name,
-          header_image: { url },
           address: { street, city, display_address, country_shortname },
         },
       } = module;
 
+      const image = module?.header_image?.url || module?.cover_image?.url;
+
       store.id = id;
       store.name = name;
-      store.image = url;
+      store.image = image;
       store.location = {
         streetAddress: street,
         city: city,
@@ -172,7 +174,7 @@ const parseDoorDashStore = (storeData) => {
     }
   }
 
-  return store;
+  //return store;
 };
 
 /*Parse DoorDash store data for web crawler
@@ -575,30 +577,33 @@ const detailStore = async (serviceIds) => {
 
     // merging menu items of the same category
     for (const serviceStore of serviceStores) {
-      for (const { categoryId, category, items } of serviceStore.menu) {
-        // if category does not already exist, add it
-        if (!menu[category]) {
-          addCategoryToMenu({
-            category: { id: categoryId, name: category },
-            menu: menu,
-            items: {},
-            service: serviceStore.service,
-          });
-        }
-        menu[category].categoryIds[serviceStore.service] = categoryId;
-        for (const item of items) {
-          if (menu[category].items[item.name]) {
-            menu[category].items[item.name].prices[serviceStore.service] =
-              item.price;
-            menu[category].items[item.name].ids[serviceStore.service] = item.id;
-          }
-          // if item does not already exist, add it
-          else {
-            addItemToMenu({
-              categoryItems: menu[category].items,
+      if (serviceStore.menu) {
+        for (const { categoryId, category, items } of serviceStore.menu) {
+          // if category does not already exist, add it
+          if (!menu[category]) {
+            addCategoryToMenu({
+              category: { id: categoryId, name: category },
+              menu: menu,
+              items: {},
               service: serviceStore.service,
-              item: item,
             });
+          }
+          menu[category].categoryIds[serviceStore.service] = categoryId;
+          for (const item of items) {
+            if (menu[category].items[item.name]) {
+              menu[category].items[item.name].prices[serviceStore.service] =
+                item.price;
+              menu[category].items[item.name].ids[serviceStore.service] =
+                item.id;
+            }
+            // if item does not already exist, add it
+            else {
+              addItemToMenu({
+                categoryItems: menu[category].items,
+                service: serviceStore.service,
+                item: item,
+              });
+            }
           }
         }
       }
