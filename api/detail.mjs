@@ -125,54 +125,54 @@ const parseGrubhubStore = (storeData) => {
  * @return {Object} parsed store information
  */
 const parseDoorDashStore = (storeData) => {
-  //return storeData;
-  let store = { menu: [] };
+  return storeData;
+  //let store = { menu: [] };
 
-  for (const module of storeData.display_modules) {
-    if (module.type == "store_header") {
-      const {
-        data: {
-          id,
-          name,
-          address: { street, city, display_address, country_shortname },
-        },
-      } = module;
+  //for (const module of storeData.display_modules) {
+  //  if (module.type == "store_header") {
+  //    const {
+  //      data: {
+  //        id,
+  //        name,
+  //        address: { street, city, display_address, country_shortname },
+  //      },
+  //    } = module;
 
-      const image = module?.header_image?.url || module?.cover_image?.url;
+  //    const image = module?.header_image?.url || module?.cover_image?.url;
 
-      store.id = id;
-      store.name = name;
-      store.image = image;
-      store.location = {
-        streetAddress: street,
-        city: city,
-        zipCode: display_address.split(",")[2].split(" ")[1],
-        country: country_shortname,
-      };
-    }
-    if (module.type == "menu_book") {
-      store.hours = module.data.menus[0].open_hours;
-    }
-    if (module.type == "item_list") {
-      const {
-        data: { name, content },
-      } = module;
+  //    store.id = id;
+  //    store.name = name;
+  //    store.image = image;
+  //    store.location = {
+  //      streetAddress: street,
+  //      city: city,
+  //      zipCode: display_address.split(",")[2].split(" ")[1],
+  //      country: country_shortname,
+  //    };
+  //  }
+  //  if (module.type == "menu_book") {
+  //    store.hours = module.data.menus[0].open_hours;
+  //  }
+  //  if (module.type == "item_list") {
+  //    const {
+  //      data: { name, content },
+  //    } = module;
 
-      store.menu.push({
-        categoryId: module.id,
-        category: name,
-        items: content.map(
-          ({ id, name, description, display_price, image }) => ({
-            id: id,
-            name: name,
-            description,
-            price: +display_price.replace("$", "") * 100,
-            image: image.url,
-          })
-        ),
-      });
-    }
-  }
+  //    store.menu.push({
+  //      categoryId: module.id,
+  //      category: name,
+  //      items: content.map(
+  //        ({ id, name, description, display_price, image }) => ({
+  //          id: id,
+  //          name: name,
+  //          description,
+  //          price: +display_price.replace("$", "") * 100,
+  //          image: image.url,
+  //        })
+  //      ),
+  //    });
+  //  }
+  //}
 
   //return store;
 };
@@ -552,80 +552,81 @@ const detailStore = async (serviceIds) => {
       }
       return accServices;
     }, [])
-  ).then((serviceStores) => {
-    let menu = {};
+  );
+  //.then((serviceStores) => {
+  //  let menu = {};
 
-    const defaultService = serviceStores[0];
+  //  const defaultService = serviceStores[0];
 
-    for (const { category, categoryId, items } of defaultService.menu) {
-      addCategoryToMenu({
-        category: { id: categoryId, name: category },
-        menu: menu,
-        items: {},
-        service: defaultService.service,
-      });
-      for (const item of items) {
-        addItemToMenu({
-          categoryItems: menu[category].items,
-          service: defaultService.service,
-          item: item,
-        });
-      }
-    }
+  //  for (const { category, categoryId, items } of defaultService.menu) {
+  //    addCategoryToMenu({
+  //      category: { id: categoryId, name: category },
+  //      menu: menu,
+  //      items: {},
+  //      service: defaultService.service,
+  //    });
+  //    for (const item of items) {
+  //      addItemToMenu({
+  //        categoryItems: menu[category].items,
+  //        service: defaultService.service,
+  //        item: item,
+  //      });
+  //    }
+  //  }
 
-    serviceStores.shift();
+  //  serviceStores.shift();
 
-    // merging menu items of the same category
-    for (const serviceStore of serviceStores) {
-      if (serviceStore.menu) {
-        for (const { categoryId, category, items } of serviceStore.menu) {
-          // if category does not already exist, add it
-          if (!menu[category]) {
-            addCategoryToMenu({
-              category: { id: categoryId, name: category },
-              menu: menu,
-              items: {},
-              service: serviceStore.service,
-            });
-          }
-          menu[category].categoryIds[serviceStore.service] = categoryId;
-          for (const item of items) {
-            if (menu[category].items[item.name]) {
-              menu[category].items[item.name].prices[serviceStore.service] =
-                item.price;
-              menu[category].items[item.name].ids[serviceStore.service] =
-                item.id;
-            }
-            // if item does not already exist, add it
-            else {
-              addItemToMenu({
-                categoryItems: menu[category].items,
-                service: serviceStore.service,
-                item: item,
-              });
-            }
-          }
-        }
-      }
-    }
+  //  // merging menu items of the same category
+  //  for (const serviceStore of serviceStores) {
+  //    if (serviceStore.menu) {
+  //      for (const { categoryId, category, items } of serviceStore.menu) {
+  //        // if category does not already exist, add it
+  //        if (!menu[category]) {
+  //          addCategoryToMenu({
+  //            category: { id: categoryId, name: category },
+  //            menu: menu,
+  //            items: {},
+  //            service: serviceStore.service,
+  //          });
+  //        }
+  //        menu[category].categoryIds[serviceStore.service] = categoryId;
+  //        for (const item of items) {
+  //          if (menu[category].items[item.name]) {
+  //            menu[category].items[item.name].prices[serviceStore.service] =
+  //              item.price;
+  //            menu[category].items[item.name].ids[serviceStore.service] =
+  //              item.id;
+  //          }
+  //          // if item does not already exist, add it
+  //          else {
+  //            addItemToMenu({
+  //              categoryItems: menu[category].items,
+  //              service: serviceStore.service,
+  //              item: item,
+  //            });
+  //          }
+  //        }
+  //      }
+  //    }
+  //  }
 
-    // removing application specific categories
-    // postmates
-    delete menu["Picked for you"];
-    // flattening hashmaps as arrays
+  //  // removing application specific categories
+  //  // postmates
+  //  delete menu["Picked for you"];
+  //  // flattening hashmaps as arrays
 
-    return {
-      id: defaultService.id,
-      name: defaultService.name,
-      image: defaultService.image,
-      hours: defaultService.hours,
-      location: defaultService.location,
-      menu: Object.values(menu).map((category) => ({
-        ...category,
-        items: Object.values(category.items),
-      })),
-    };
-  });
+  //  return {
+  //    id: defaultService.id,
+  //    name: defaultService.name,
+  //    image: defaultService.image,
+  //    hours: defaultService.hours,
+  //    location: defaultService.location,
+  //    menu: Object.values(menu).map((category) => ({
+  //      ...category,
+  //      items: Object.values(category.items),
+  //    })),
+  //  };
+  //});
 };
 
 export { detailLocation, detailStore, detailItem };

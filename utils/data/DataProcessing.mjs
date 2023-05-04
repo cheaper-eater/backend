@@ -49,6 +49,7 @@ const searchDataRemoveDuplicate = (searchData, currentLocation) => {
         rating: element.rating,
         image: element.image,
         matched: false,
+        isRetail: element?.isRetail || false,
       });
     });
   }
