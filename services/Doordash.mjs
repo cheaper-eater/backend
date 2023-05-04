@@ -259,6 +259,10 @@ class Doordash extends Service {
     ).json();
   }
 
+  /* Get retail store information
+   * @param {String} storeId of the store
+   * @return {Object} store data
+   */
   async getRetailStore(storeId) {
     return await (
       await this.callServiceAPI(async () =>
