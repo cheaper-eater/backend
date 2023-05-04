@@ -260,27 +260,26 @@ class Doordash extends Service {
   }
 
   async getConvenienceStore(storeId) {
-    const options = {
-      method: "GET",
-      headers: {
-        authorization: `JWT ${(await this.getToken()).accessToken}`,
-        "accept-language": "en-US",
-        "client-version": "android v15.103.15 b15103159",
-        "user-agent": "DoorDashConsumer/Android 15.103.15",
-        "x-experience-id": "doordash",
-        "x-support-partner-dashpass": "true",
-        "dd-user-locale": "en-US",
-        "x-bff-error-format": "v2",
-      },
-    };
-
-    fetch(
-      `https://consumer-mobile-bff.doordash.com/v1/convenience/stores/${storeId}/home`,
-      options
-    )
-      .then((response) => response.json())
-      .then((response) => console.log(response))
-      .catch((err) => console.error(err));
+    return await (
+      await this.callServiceAPI(async () =>
+        fetch(
+          `https://consumer-mobile-bff.doordash.com/v1/convenience/stores/${storeId}/home`,
+          {
+            method: "GET",
+            headers: {
+              authorization: `JWT ${(await this.getToken()).accessToken}`,
+              "accept-language": "en-US",
+              "client-version": "android v15.103.15 b15103159",
+              "user-agent": "DoorDashConsumer/Android 15.103.15",
+              "x-experience-id": "doordash",
+              "x-support-partner-dashpass": "true",
+              "dd-user-locale": "en-US",
+              "x-bff-error-format": "v2",
+            },
+          }
+        )
+      )
+    ).json();
   }
 
   /*
