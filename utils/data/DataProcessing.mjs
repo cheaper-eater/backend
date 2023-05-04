@@ -48,8 +48,8 @@ const searchDataRemoveDuplicate = (searchData, currentLocation) => {
         estimatedDeliveryTime: element.estimatedDeliveryTime,
         rating: element.rating,
         image: element.image,
+        isRetail: element?.isRetail ? true : false,
         matched: false,
-        isRetail: element?.isRetail || false,
       });
     });
   }
@@ -70,14 +70,22 @@ const searchDataRemoveDuplicate = (searchData, currentLocation) => {
       ) {
         tempJson[i].matched = true;
         tempJson[j].matched = true;
+
+        // if store is retail according to doordash
+        const isRetail =
+          (tempJson[i].service == "doordash" && tempJson[i].isRetail) ||
+          (tempJson[j].service == "doordash" && tempJson[j].isRetail);
+
         if (tempJson[i].service == "postmates") {
           if (duplicateObjs[duplicateObjs.length - 1] != tempJson[i]) {
             tempJson[i].ids[tempJson[i].service] = tempJson[i].id;
+            tempJson[i].isRetail = isRetail;
             duplicateObjs.push(tempJson[i]);
           }
         } else if (tempJson[j].service == "postmates") {
           if (duplicateObjs[duplicateObjs.length - 1] != tempJson[j]) {
             tempJson[j].ids[tempJson[j].service] = tempJson[j].id;
+            tempJson[j].isRetail = isRetail;
             duplicateObjs.push(tempJson[j]);
           }
         }
