@@ -47,9 +47,6 @@ const removeFromPostmatesCart = async (item) => {
 
 const getItemDetails = async (item) => {
   try {
-    console.log(
-      "ASDFASDFASDFASDFASDFASDFASDFASDFASDFASDFASDFASDFASDFASDFASDFASDF"
-    );
     const postmates = new Postmates();
     return (await postmates.getItemDetails(item)).data;
   } catch (e) {
