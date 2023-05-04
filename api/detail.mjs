@@ -589,9 +589,7 @@ const detailStore = async (serviceIds, isRetail) => {
       parser: isRetail ? parseDoorDashConvenienceStore : parseDoorDashStore,
       getter: (id) => {
         const instance = new Doordash();
-        return isRetail
-          ? instance.getConvenienceStore(id)
-          : instance.getStore(id);
+        return isRetail ? instance.getRetailStore(id) : instance.getStore(id);
       },
     },
   };

@@ -259,7 +259,7 @@ class Doordash extends Service {
     ).json();
   }
 
-  async getConvenienceStore(storeId) {
+  async getRetailStore(storeId) {
     return await (
       await this.callServiceAPI(async () =>
         fetch(
