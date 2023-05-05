@@ -240,6 +240,41 @@ class Postmates extends Service {
     ).json();
   }
 
+  async getItem({ storeID, sectionID, subsectionID, itemID }) {
+    return await (
+      await this.callServiceAPI(() =>
+        fetch("https://postmates.com/api/getMenuItemV1", {
+          method: "POST",
+          headers: {
+            authority: "postmates.com",
+            accept: "*/*",
+            "accept-language": "en-US,en;q=0.9",
+            "content-type": "application/json",
+            dnt: "1",
+            origin: "https://postmates.com",
+            "sec-ch-ua":
+              '"Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";vx ="110"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "user-agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+            "x-csrf-token": "x",
+          },
+          body: JSON.stringify({
+            itemRequestType: "ITEM",
+            storeUuid: storeID,
+            sectionUuid: sectionID,
+            subsectionUuid: subsectionID,
+            menuItemUuid: itemID,
+          }),
+        })
+      )
+    ).json();
+  }
+
   /*Autocomplete search results
    * @param {Object} payload
    * @param {String} payload.query to search

@@ -19,7 +19,14 @@ detailRouter.post("/store", async (req, res) => {
 });
 
 detailRouter.post("/item", async (req, res) => {
-  res.json(await detailItem());
+  res.json(
+    await detailItem(
+      Object.keys(req.body).map((key) => ({
+        itemData: req.body[key],
+        service: key,
+      }))
+    )
+  );
 });
 
 export default detailRouter;
