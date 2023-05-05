@@ -306,19 +306,14 @@ const buildCustomizationOptionsRecursively = (
         break;
       }
       case GRUBHUB: {
-        const {
-          min_choice_options,
-          max_choice_options,
-          price: { amount },
-          description,
-          id,
-        } = customization;
+        const { min_choice_options, max_choice_options, description, id } =
+          customization;
         generalCustomization = {
           maxPermitted: max_choice_options,
           minPermitted: min_choice_options,
           title: description,
           id: id,
-          price: amount,
+          price: customization?.price?.amount,
         };
         break;
       }
@@ -345,6 +340,7 @@ const buildCustomizationOptionsRecursively = (
     op.title = title;
     op.price = price;
     op.ids[service] = id;
+    op.options = {};
 
     if (
       customization[customizationOptionsName] &&
@@ -396,7 +392,12 @@ const detailItem = async (serviceIds) => {
         accServices.push(
           new services[service].instance().getItem(itemData).then((data) => ({
             service: service,
-            serviceItem: data.data,
+            serviceItem:
+              service === POSTMATES
+                ? data.data
+                : service === GRUBHUB
+                ? data
+                : null,
           }))
         );
       }
