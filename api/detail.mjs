@@ -3,11 +3,6 @@ import Grubhub from "../services/Grubhub.mjs";
 import Doordash from "../services/Doordash.mjs";
 import { HTTPResponseError } from "../errors/http.mjs";
 
-// temp data
-import pItem from "./p_item.mjs";
-import ghItem from "./gh_item.mjs";
-import ddItem from "./dd_item.mjs";
-
 const POSTMATES = "postmates";
 const GRUBHUB = "grubhub";
 const DOORDASH = "doordash";
