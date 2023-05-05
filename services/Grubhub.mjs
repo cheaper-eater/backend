@@ -216,8 +216,6 @@ class Grubhub extends Service {
   /*Get item details + customizastions
    * @param storeId the store id
    * @param itemId the item id
-   * @param {String} payload.location.latitude location latitude
-   * @param {String} payload.location.longitude location longitude
    * @return {Object} json object containing cartID
    */
   async getItem({ storeId, itemId }) {
