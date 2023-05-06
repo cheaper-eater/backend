@@ -140,8 +140,6 @@ const parseDoorDashStore = (storeData) => {
 
       const image = module?.header_image?.url || module?.cover_image?.url;
 
-      console.log(display_address);
-
       store.id = id;
       store.name = name;
       store.image = image;
