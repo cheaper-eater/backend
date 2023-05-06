@@ -140,13 +140,17 @@ const parseDoorDashStore = (storeData) => {
 
       const image = module?.header_image?.url || module?.cover_image?.url;
 
+      console.log(display_address);
+
       store.id = id;
       store.name = name;
       store.image = image;
       store.location = {
         streetAddress: street,
         city: city,
-        zipCode: display_address.split(",")[2].split(" ")[1],
+        zipCode: (
+          display_address.split(",")[2] || display_address.split(",")[1]
+        ).split(" ")[1],
         country: country_shortname,
       };
     }
