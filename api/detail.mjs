@@ -115,12 +115,54 @@ const parseGrubhubStore = (storeData) => {
   };
 };
 
+const parseDoorDashConvenienceStore = (storeData) => {
+  const {
+    id,
+    name,
+    cover_img_url,
+    address: { street, city, display_address },
+  } = storeData.store;
+  return {
+    id: id,
+    name: name,
+    image: cover_img_url,
+    location: {
+      streetAddress: street,
+      city: city,
+      zipCode: display_address.split(",")[2].split(" ")[1],
+      country: display_address.split(",")[3],
+    },
+    menu: storeData.lego_section_body.map(
+      ({ logging: { id }, text: { title }, children }) => ({
+        categoryId: id,
+        category: title,
+        description: title,
+        items: children.map(
+          ({
+            custom: { item_id },
+            text: { title, description },
+            images: {
+              main: { uri },
+            },
+            logging: { item_price },
+          }) => ({
+            id: item_id,
+            name: title,
+            description: description,
+            price: item_price,
+            image: uri,
+          })
+        ),
+      })
+    ),
+  };
+};
+
 /*Parse DoorDash store data for mobile API
  * @param {Object} storeData the store data to parse
  * @return {Object} parsed store information
  */
 const parseDoorDashStore = (storeData) => {
-  //return storeData;
   let store = { menu: [] };
 
   for (const module of storeData.display_modules) {
@@ -141,7 +183,9 @@ const parseDoorDashStore = (storeData) => {
       store.location = {
         streetAddress: street,
         city: city,
-        zipCode: display_address.split(",")[2].split(" ")[1],
+        zipCode: (
+          display_address.split(",")[2] || display_address.split(",")[1]
+        ).split(" ")[1],
         country: country_shortname,
       };
     }
@@ -169,7 +213,7 @@ const parseDoorDashStore = (storeData) => {
     }
   }
 
-  //return store;
+  return store;
 };
 
 /*Parse DoorDash store data for web crawler
@@ -542,18 +586,30 @@ const detailItem = async (serviceIds) => {
  * store ids ex: {"postmates": "id"}
  * @return {Object} store information
  */
-const detailStore = async (serviceIds) => {
+const detailStore = async (serviceIds, isRetail) => {
   const services = {
-    postmates: { instance: Postmates, parser: parsePostmatesStore },
-    grubhub: { instance: Grubhub, parser: parseGrubhubStore },
-    doordash: { instance: Doordash, parser: parseDoorDashStore },
+    postmates: {
+      parser: parsePostmatesStore,
+      getter: (id) => new Postmates().getStore(id),
+    },
+    grubhub: {
+      parser: parseGrubhubStore,
+      getter: (id) => new Grubhub().getStore(id),
+    },
+    doordash: {
+      parser: isRetail ? parseDoorDashConvenienceStore : parseDoorDashStore,
+      getter: (id) => {
+        const instance = new Doordash();
+        return isRetail ? instance.getRetailStore(id) : instance.getStore(id);
+      },
+    },
   };
 
   return Promise.all(
     serviceIds.reduce((accServices, { service, id }) => {
       if (id && id != "null") {
         accServices.push(
-          new services[service].instance().getStore(id).then((store) => ({
+          services[service].getter(id).then((store) => ({
             service: service,
             ...services[service].parser(store),
           }))
