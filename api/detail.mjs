@@ -43,6 +43,7 @@ const parsePostmatesStore = (storeData) => {
     hours,
     catalogSectionsMap,
     sections,
+    menuUUID,
   } = storeData.data;
 
   return {
@@ -56,28 +57,27 @@ const parsePostmatesStore = (storeData) => {
       zipCode: location.postalCode,
       country: location.country,
     },
-    menu: catalogSectionsMap[sections[0].uuid].reduce(
-      (accCategory, catalogSection) => {
-        if (catalogSection.type == "VERTICAL_GRID") {
-          accCategory.push({
-            categoryId: catalogSection.catalogSectionUUID,
-            category: catalogSection.payload.standardItemsPayload.title.text,
-            items: catalogSection.payload.standardItemsPayload.catalogItems.map(
-              (item) => ({
-                id: item.uuid,
-                name: item.title,
-                description: item.itemDescription,
-                price: item.price,
-                image: item.imageUrl,
-                subsectionId: item.subsectionUuid,
-              })
-            ),
-          });
-        }
-        return accCategory;
-      },
-      []
-    ),
+    menu: (
+      catalogSectionsMap[sections[0].uuid] || catalogSectionsMap[menuUUID]
+    ).reduce((accCategory, catalogSection) => {
+      if (catalogSection.payload.type == "standardItemsPayload") {
+        accCategory.push({
+          categoryId: catalogSection.catalogSectionUUID,
+          category: catalogSection.payload.standardItemsPayload.title.text,
+          items: catalogSection.payload.standardItemsPayload.catalogItems.map(
+            (item) => ({
+              id: item.uuid,
+              name: item.title,
+              description: item.itemDescription,
+              price: item.price,
+              image: item.imageUrl,
+              subsectionId: item.subsectionUuid,
+            })
+          ),
+        });
+      }
+      return accCategory;
+    }, []),
   };
 };
 
@@ -120,6 +120,49 @@ const parseGrubhubStore = (storeData) => {
   };
 };
 
+const parseDoorDashConvenienceStore = (storeData) => {
+  const {
+    id,
+    name,
+    cover_img_url,
+    address: { street, city, display_address },
+  } = storeData.store;
+  return {
+    id: id,
+    name: name,
+    image: cover_img_url,
+    location: {
+      streetAddress: street,
+      city: city,
+      zipCode: display_address.split(",")[2].split(" ")[1],
+      country: display_address.split(",")[3],
+    },
+    menu: storeData.lego_section_body.map(
+      ({ logging: { id }, text: { title }, children }) => ({
+        categoryId: id,
+        category: title,
+        description: title,
+        items: children.map(
+          ({
+            custom: { item_id },
+            text: { title, description },
+            images: {
+              main: { uri },
+            },
+            logging: { item_price },
+          }) => ({
+            id: item_id,
+            name: title,
+            description: description,
+            price: item_price,
+            image: uri,
+          })
+        ),
+      })
+    ),
+  };
+};
+
 /*Parse DoorDash store data for mobile API
  * @param {Object} storeData the store data to parse
  * @return {Object} parsed store information
@@ -133,14 +176,15 @@ const parseDoorDashStore = (storeData) => {
         data: {
           id,
           name,
-          header_image: { url },
           address: { street, city, display_address, country_shortname },
         },
       } = module;
 
+      const image = module?.header_image?.url || module?.cover_image?.url;
+
       store.id = id;
       store.name = name;
-      store.image = url;
+      store.image = image;
       store.location = {
         streetAddress: street,
         city: city,
@@ -531,18 +575,30 @@ const detailItem = async () => {
  * store ids ex: {"postmates": "id"}
  * @return {Object} store information
  */
-const detailStore = async (serviceIds) => {
+const detailStore = async (serviceIds, isRetail) => {
   const services = {
-    postmates: { instance: Postmates, parser: parsePostmatesStore },
-    grubhub: { instance: Grubhub, parser: parseGrubhubStore },
-    doordash: { instance: Doordash, parser: parseDoorDashStore },
+    postmates: {
+      parser: parsePostmatesStore,
+      getter: (id) => new Postmates().getStore(id),
+    },
+    grubhub: {
+      parser: parseGrubhubStore,
+      getter: (id) => new Grubhub().getStore(id),
+    },
+    doordash: {
+      parser: isRetail ? parseDoorDashConvenienceStore : parseDoorDashStore,
+      getter: (id) => {
+        const instance = new Doordash();
+        return isRetail ? instance.getRetailStore(id) : instance.getStore(id);
+      },
+    },
   };
 
   return Promise.all(
     serviceIds.reduce((accServices, { service, id }) => {
       if (id && id != "null") {
         accServices.push(
-          new services[service].instance().getStore(id).then((store) => ({
+          services[service].getter(id).then((store) => ({
             service: service,
             ...services[service].parser(store),
           }))
@@ -575,30 +631,33 @@ const detailStore = async (serviceIds) => {
 
     // merging menu items of the same category
     for (const serviceStore of serviceStores) {
-      for (const { categoryId, category, items } of serviceStore.menu) {
-        // if category does not already exist, add it
-        if (!menu[category]) {
-          addCategoryToMenu({
-            category: { id: categoryId, name: category },
-            menu: menu,
-            items: {},
-            service: serviceStore.service,
-          });
-        }
-        menu[category].categoryIds[serviceStore.service] = categoryId;
-        for (const item of items) {
-          if (menu[category].items[item.name]) {
-            menu[category].items[item.name].prices[serviceStore.service] =
-              item.price;
-            menu[category].items[item.name].ids[serviceStore.service] = item.id;
-          }
-          // if item does not already exist, add it
-          else {
-            addItemToMenu({
-              categoryItems: menu[category].items,
+      if (serviceStore.menu) {
+        for (const { categoryId, category, items } of serviceStore.menu) {
+          // if category does not already exist, add it
+          if (!menu[category]) {
+            addCategoryToMenu({
+              category: { id: categoryId, name: category },
+              menu: menu,
+              items: {},
               service: serviceStore.service,
-              item: item,
             });
+          }
+          menu[category].categoryIds[serviceStore.service] = categoryId;
+          for (const item of items) {
+            if (menu[category].items[item.name]) {
+              menu[category].items[item.name].prices[serviceStore.service] =
+                item.price;
+              menu[category].items[item.name].ids[serviceStore.service] =
+                item.id;
+            }
+            // if item does not already exist, add it
+            else {
+              addItemToMenu({
+                categoryItems: menu[category].items,
+                service: serviceStore.service,
+                item: item,
+              });
+            }
           }
         }
       }
