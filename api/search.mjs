@@ -136,6 +136,7 @@ const searchDoordash = async (searchData) => {
             ? custom.rating.average_rating
             : null,
           image: uri,
+          isRetail: text?.custom?.is_retail === "true" ? true : false,
         })
       ),
     };

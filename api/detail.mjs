@@ -4,9 +4,9 @@ import Doordash from "../services/Doordash.mjs";
 import { HTTPResponseError } from "../errors/http.mjs";
 
 // temp data
-import pItem from "./p_item.mjs";
-import ghItem from "./gh_item.mjs";
-import ddItem from "./dd_item.mjs";
+// import pItem from "./p_item.mjs";
+// import ghItem from "./gh_item.mjs";
+// import ddItem from "./dd_item.mjs";
 
 const POSTMATES = "postmates";
 const GRUBHUB = "grubhub";
@@ -43,6 +43,7 @@ const parsePostmatesStore = (storeData) => {
     hours,
     catalogSectionsMap,
     sections,
+    menuUUID,
   } = storeData.data;
 
   return {
@@ -56,28 +57,27 @@ const parsePostmatesStore = (storeData) => {
       zipCode: location.postalCode,
       country: location.country,
     },
-    menu: catalogSectionsMap[sections[0].uuid].reduce(
-      (accCategory, catalogSection) => {
-        if (catalogSection.type == "VERTICAL_GRID") {
-          accCategory.push({
-            categoryId: catalogSection.catalogSectionUUID,
-            category: catalogSection.payload.standardItemsPayload.title.text,
-            items: catalogSection.payload.standardItemsPayload.catalogItems.map(
-              (item) => ({
-                id: item.uuid,
-                name: item.title,
-                description: item.itemDescription,
-                price: item.price,
-                image: item.imageUrl,
-                subsectionId: item.subsectionUuid,
-              })
-            ),
-          });
-        }
-        return accCategory;
-      },
-      []
-    ),
+    menu: (
+      catalogSectionsMap[sections[0].uuid] || catalogSectionsMap[menuUUID]
+    ).reduce((accCategory, catalogSection) => {
+      if (catalogSection.payload.type == "standardItemsPayload") {
+        accCategory.push({
+          categoryId: catalogSection.catalogSectionUUID,
+          category: catalogSection.payload.standardItemsPayload.title.text,
+          items: catalogSection.payload.standardItemsPayload.catalogItems.map(
+            (item) => ({
+              id: item.uuid,
+              name: item.title,
+              description: item.itemDescription,
+              price: item.price,
+              image: item.imageUrl,
+              subsectionId: item.subsectionUuid,
+            })
+          ),
+        });
+      }
+      return accCategory;
+    }, []),
   };
 };
 
@@ -120,6 +120,49 @@ const parseGrubhubStore = (storeData) => {
   };
 };
 
+const parseDoorDashConvenienceStore = (storeData) => {
+  const {
+    id,
+    name,
+    cover_img_url,
+    address: { street, city, display_address },
+  } = storeData.store;
+  return {
+    id: id,
+    name: name,
+    image: cover_img_url,
+    location: {
+      streetAddress: street,
+      city: city,
+      zipCode: display_address.split(",")[2].split(" ")[1],
+      country: display_address.split(",")[3],
+    },
+    menu: storeData.lego_section_body.map(
+      ({ logging: { id }, text: { title }, children }) => ({
+        categoryId: id,
+        category: title,
+        description: title,
+        items: children.map(
+          ({
+            custom: { item_id },
+            text: { title, description },
+            images: {
+              main: { uri },
+            },
+            logging: { item_price },
+          }) => ({
+            id: item_id,
+            name: title,
+            description: description,
+            price: item_price,
+            image: uri,
+          })
+        ),
+      })
+    ),
+  };
+};
+
 /*Parse DoorDash store data for mobile API
  * @param {Object} storeData the store data to parse
  * @return {Object} parsed store information
@@ -133,18 +176,21 @@ const parseDoorDashStore = (storeData) => {
         data: {
           id,
           name,
-          header_image: { url },
           address: { street, city, display_address, country_shortname },
         },
       } = module;
 
+      const image = module?.header_image?.url || module?.cover_image?.url;
+
       store.id = id;
       store.name = name;
-      store.image = url;
+      store.image = image;
       store.location = {
         streetAddress: street,
         city: city,
-        zipCode: display_address.split(",")[2].split(" ")[1],
+        zipCode: (
+          display_address.split(",")[2] || display_address.split(",")[1]
+        ).split(" ")[1],
         country: country_shortname,
       };
     }
@@ -376,7 +422,13 @@ const buildCustomizationOptionsRecursively = (
  * @return {Object} details.grubhub original grubhub items
  * @return {Object} details.doordash original doordash items
  */
-const detailItem = async () => {
+const detailItem = async (serviceIds) => {
+  const services = {
+    postmates: { instance: Postmates },
+    grubhub: { instance: Grubhub },
+    doordash: { instance: Doordash },
+  };
+
   // modeled after postmates item detail with field applicable
   // to all other services
   let item = {
@@ -387,143 +439,150 @@ const detailItem = async () => {
     customizationsList: {},
   };
 
-  // promise.all() once api calls are available
-  const items = [
-    { serviceItem: pItem.data, service: "postmates" },
-    { serviceItem: ghItem, service: "grubhub" },
-    { serviceItem: ddItem.data.itemPage, service: "doordash" },
-  ];
+  return Promise.all(
+    serviceIds.reduce((accServices, { service, itemData }) => {
+      if (itemData && itemData != "null") {
+        accServices.push(
+          new services[service].instance().getItem(itemData).then((data) => ({
+            service: service,
+            serviceItem: data.data,
+          }))
+        );
+      }
+      return accServices;
+    }, [])
+  ).then((items) => {
+    for (const { service, serviceItem } of items) {
+      if (service === POSTMATES && serviceItem) {
+        const { uuid, price, title, itemDescription, customizationsList } =
+          serviceItem;
 
-  for (const { service, serviceItem } of items) {
-    if (service === POSTMATES && serviceItem) {
-      const { uuid, price, title, itemDescription, customizationsList } =
-        serviceItem;
-
-      addServiceItemToMergedItem(
-        {
-          id: uuid,
-          price: price,
-          title: title,
-          description: itemDescription,
-          service: service,
-        },
-        item
-      );
-
-      for (const customization of customizationsList) {
-        const { maxPermitted, minPermitted, title, uuid, options } =
-          customization;
-
-        addCustomizationToMergedCustomization(
+        addServiceItemToMergedItem(
           {
-            maxPermitted: maxPermitted,
-            minPermitted: minPermitted,
-            title: title,
             id: uuid,
-            options: buildCustomizationOptionsRecursively(
-              options,
-              "option",
-              service
-            ),
+            price: price,
+            title: title,
+            description: itemDescription,
             service: service,
           },
-          item.customizationsList
+          item
         );
 
-        // next level of customization options
-      }
-    } else if (service === GRUBHUB && serviceItem) {
-      const {
-        id,
-        minimum_price_variation: { amount },
-        name,
-        description,
-        choice_category_list,
-      } = serviceItem;
+        for (const customization of customizationsList) {
+          const { maxPermitted, minPermitted, title, uuid, options } =
+            customization;
 
-      addServiceItemToMergedItem(
-        {
-          id: id,
-          price: amount,
-          title: name,
-          description: description,
-          service: service,
-        },
-        item
-      );
+          addCustomizationToMergedCustomization(
+            {
+              maxPermitted: maxPermitted,
+              minPermitted: minPermitted,
+              title: title,
+              id: uuid,
+              options: buildCustomizationOptionsRecursively(
+                options,
+                "option",
+                service
+              ),
+              service: service,
+            },
+            item.customizationsList
+          );
 
-      for (const customization of choice_category_list) {
+          // next level of customization options
+        }
+      } else if (service === GRUBHUB && serviceItem) {
         const {
-          max_choice_options,
-          min_choice_options,
           id,
+          minimum_price_variation: { amount },
           name,
-          choice_option_list,
-        } = customization;
+          description,
+          choice_category_list,
+        } = serviceItem;
 
-        addCustomizationToMergedCustomization(
+        addServiceItemToMergedItem(
           {
-            maxPermitted: max_choice_options,
-            minPermitted: min_choice_options,
-            title: name,
             id: id,
-            options: buildCustomizationOptionsRecursively(
-              choice_option_list,
-              "choice_category_list",
-              service
-            ),
-
+            price: amount,
+            title: name,
+            description: description,
             service: service,
           },
-          item.customizationsList
+          item
         );
-      }
-    } else if (service === DOORDASH && serviceItem) {
-      const {
-        itemHeader: { id, name, unitAmount, description },
-        optionLists,
-      } = serviceItem;
 
-      addServiceItemToMergedItem(
-        {
-          id: id,
-          price: unitAmount,
-          title: name,
-          description: description,
-          service: service,
-        },
-        item
-      );
+        for (const customization of choice_category_list) {
+          const {
+            max_choice_options,
+            min_choice_options,
+            id,
+            name,
+            choice_option_list,
+          } = customization;
 
-      for (const customization of optionLists) {
-        const { maxNumOptions, minNumOptions, name, id, options } =
-          customization;
+          addCustomizationToMergedCustomization(
+            {
+              maxPermitted: max_choice_options,
+              minPermitted: min_choice_options,
+              title: name,
+              id: id,
+              options: buildCustomizationOptionsRecursively(
+                choice_option_list,
+                "choice_category_list",
+                service
+              ),
 
-        addCustomizationToMergedCustomization(
+              service: service,
+            },
+            item.customizationsList
+          );
+        }
+      } else if (service === DOORDASH && serviceItem) {
+        const {
+          itemHeader: { id, name, unitAmount, description },
+          optionLists,
+        } = serviceItem;
+
+        addServiceItemToMergedItem(
           {
-            maxPermitted: maxNumOptions,
-            minPermitted: minNumOptions,
-            title: name,
             id: id,
-            options: buildCustomizationOptionsRecursively(
-              options,
-              "optionLists",
-              service
-            ),
+            price: unitAmount,
+            title: name,
+            description: description,
             service: service,
           },
-          item.customizationsList
+          item
         );
+
+        for (const customization of optionLists) {
+          const { maxNumOptions, minNumOptions, name, id, options } =
+            customization;
+
+          addCustomizationToMergedCustomization(
+            {
+              maxPermitted: maxNumOptions,
+              minPermitted: minNumOptions,
+              title: name,
+              id: id,
+              options: buildCustomizationOptionsRecursively(
+                options,
+                "optionLists",
+                service
+              ),
+              service: service,
+            },
+            item.customizationsList
+          );
+        }
       }
     }
-  }
 
-  let individualServiceItems = {};
-  for (const { service, serviceItem } of items) {
-    individualServiceItems[service] = serviceItem;
-  }
+    let individualServiceItems = {};
+    for (const { service, serviceItem } of items) {
+      individualServiceItems[service] = serviceItem;
+    }
 
-  return { merged: item, ...individualServiceItems };
+    return { merged: item, ...individualServiceItems };
+  });
 };
 
 /*Get detail store information for the specified services
@@ -531,18 +590,30 @@ const detailItem = async () => {
  * store ids ex: {"postmates": "id"}
  * @return {Object} store information
  */
-const detailStore = async (serviceIds) => {
+const detailStore = async (serviceIds, isRetail) => {
   const services = {
-    postmates: { instance: Postmates, parser: parsePostmatesStore },
-    grubhub: { instance: Grubhub, parser: parseGrubhubStore },
-    doordash: { instance: Doordash, parser: parseDoorDashStore },
+    postmates: {
+      parser: parsePostmatesStore,
+      getter: (id) => new Postmates().getStore(id),
+    },
+    grubhub: {
+      parser: parseGrubhubStore,
+      getter: (id) => new Grubhub().getStore(id),
+    },
+    doordash: {
+      parser: isRetail ? parseDoorDashConvenienceStore : parseDoorDashStore,
+      getter: (id) => {
+        const instance = new Doordash();
+        return isRetail ? instance.getRetailStore(id) : instance.getStore(id);
+      },
+    },
   };
 
   return Promise.all(
     serviceIds.reduce((accServices, { service, id }) => {
       if (id && id != "null") {
         accServices.push(
-          new services[service].instance().getStore(id).then((store) => ({
+          services[service].getter(id).then((store) => ({
             service: service,
             ...services[service].parser(store),
           }))
@@ -575,30 +646,33 @@ const detailStore = async (serviceIds) => {
 
     // merging menu items of the same category
     for (const serviceStore of serviceStores) {
-      for (const { categoryId, category, items } of serviceStore.menu) {
-        // if category does not already exist, add it
-        if (!menu[category]) {
-          addCategoryToMenu({
-            category: { id: categoryId, name: category },
-            menu: menu,
-            items: {},
-            service: serviceStore.service,
-          });
-        }
-        menu[category].categoryIds[serviceStore.service] = categoryId;
-        for (const item of items) {
-          if (menu[category].items[item.name]) {
-            menu[category].items[item.name].prices[serviceStore.service] =
-              item.price;
-            menu[category].items[item.name].ids[serviceStore.service] = item.id;
-          }
-          // if item does not already exist, add it
-          else {
-            addItemToMenu({
-              categoryItems: menu[category].items,
+      if (serviceStore.menu) {
+        for (const { categoryId, category, items } of serviceStore.menu) {
+          // if category does not already exist, add it
+          if (!menu[category]) {
+            addCategoryToMenu({
+              category: { id: categoryId, name: category },
+              menu: menu,
+              items: {},
               service: serviceStore.service,
-              item: item,
             });
+          }
+          menu[category].categoryIds[serviceStore.service] = categoryId;
+          for (const item of items) {
+            if (menu[category].items[item.name]) {
+              menu[category].items[item.name].prices[serviceStore.service] =
+                item.price;
+              menu[category].items[item.name].ids[serviceStore.service] =
+                item.id;
+            }
+            // if item does not already exist, add it
+            else {
+              addItemToMenu({
+                categoryItems: menu[category].items,
+                service: serviceStore.service,
+                item: item,
+              });
+            }
           }
         }
       }
