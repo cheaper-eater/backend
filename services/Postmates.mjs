@@ -409,7 +409,7 @@ class Postmates extends Service {
    * @param storeID->itemID are obtained from getStore().
    */
   async getItemDetails({ storeID, sectionID, subsectionID, itemID }) {
-    console.log("Here");
+    //console.log("Here");
     const res = await this.callServiceAPI(() =>
       fetch("https://postmates.com/api/getMenuItemV1", {
         method: "POST",
