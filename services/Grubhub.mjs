@@ -246,7 +246,8 @@ class Grubhub extends Service {
         })
       )
     ).json();
-    
+  }
+
   /*Creates a Grubhub cart.
    * @return {Object} json object containing cartID, a cartID in URL form,
    * and "already_exists: false"
