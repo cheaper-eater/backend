@@ -60,7 +60,7 @@ const parsePostmatesStore = (storeData) => {
     menu: (
       catalogSectionsMap[sections[0].uuid] || catalogSectionsMap[menuUUID]
     ).reduce((accCategory, catalogSection) => {
-      if (catalogSection.payload.type == "standardItemsPayload") {
+      if (catalogSection.type == "standardItemsPayload") {
         accCategory.push({
           categoryId: catalogSection.catalogSectionUUID,
           category: catalogSection.payload.standardItemsPayload.title.text,
@@ -72,6 +72,7 @@ const parsePostmatesStore = (storeData) => {
               price: item.price,
               image: item.imageUrl,
               subsectionId: item.subsectionUuid,
+              sectionId: item.sectionUuid,
             })
           ),
         });
