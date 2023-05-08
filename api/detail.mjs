@@ -43,7 +43,6 @@ const parsePostmatesStore = (storeData) => {
     hours,
     catalogSectionsMap,
     sections,
-    menuUUID,
   } = storeData.data;
 
   return {
@@ -57,27 +56,29 @@ const parsePostmatesStore = (storeData) => {
       zipCode: location.postalCode,
       country: location.country,
     },
-    menu: (
-      catalogSectionsMap[sections[0].uuid] || catalogSectionsMap[menuUUID]
-    ).reduce((accCategory, catalogSection) => {
-      if (catalogSection.payload.type == "standardItemsPayload") {
-        accCategory.push({
-          categoryId: catalogSection.catalogSectionUUID,
-          category: catalogSection.payload.standardItemsPayload.title.text,
-          items: catalogSection.payload.standardItemsPayload.catalogItems.map(
-            (item) => ({
-              id: item.uuid,
-              name: item.title,
-              description: item.itemDescription,
-              price: item.price,
-              image: item.imageUrl,
-              subsectionId: item.subsectionUuid,
-            })
-          ),
-        });
-      }
-      return accCategory;
-    }, []),
+    menu: catalogSectionsMap[sections[0].uuid].reduce(
+      (accCategory, catalogSection) => {
+        if (catalogSection.type == "standardItemsPayload") {
+          accCategory.push({
+            categoryId: catalogSection.catalogSectionUUID,
+            category: catalogSection.payload.standardItemsPayload.title.text,
+            items: catalogSection.payload.standardItemsPayload.catalogItems.map(
+              (item) => ({
+                id: item.uuid,
+                name: item.title,
+                description: item.itemDescription,
+                price: item.price,
+                image: item.imageUrl,
+                subsectionId: item.subsectionUuid,
+                sectionId: item.sectionUuid,
+              })
+            ),
+          });
+        }
+        return accCategory;
+      },
+      []
+    ),
   };
 };
 
