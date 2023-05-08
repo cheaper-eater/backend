@@ -213,6 +213,41 @@ class Grubhub extends Service {
     ).json();
   }
 
+  /*Get item details + customizastions
+   * @param storeId the store id
+   * @param itemId the item id
+   * @return {Object} json object containing cartID
+   */
+  async getItem({ storeId, itemId }) {
+    let endpoint = new URL(
+      `https://api-gtm.grubhub.com/restaurants/${storeId}/menu_items/${itemId}`
+    );
+
+    const params = new URLSearchParams({
+      version: 4,
+    });
+
+    endpoint.search = params;
+
+    return await (
+      await this.callServiceAPI(async () =>
+        fetch(endpoint, {
+          method: "GET",
+          headers: {
+            authority: "api-gtm.grubhub.com",
+            accept: "application/json",
+            "accept-language": "en-US,en;q=0.7",
+            authorization: `Bearer ${(await this.getToken()).accessToken}`,
+            origin: "https://www.grubhub.com",
+            referer: "https://www.grubhub.com/",
+            "user-agent":
+              "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36",
+          },
+        })
+      )
+    ).json();
+  }
+
   /*Creates a Grubhub cart.
    * @return {Object} json object containing cartID, a cartID in URL form,
    * and "already_exists: false"

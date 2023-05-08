@@ -3,11 +3,6 @@ import Grubhub from "../services/Grubhub.mjs";
 import Doordash from "../services/Doordash.mjs";
 import { HTTPResponseError } from "../errors/http.mjs";
 
-// temp data
-// import pItem from "./p_item.mjs";
-// import ghItem from "./gh_item.mjs";
-// import ddItem from "./dd_item.mjs";
-
 const POSTMATES = "postmates";
 const GRUBHUB = "grubhub";
 const DOORDASH = "doordash";
@@ -356,19 +351,14 @@ const buildCustomizationOptionsRecursively = (
         break;
       }
       case GRUBHUB: {
-        const {
-          min_choice_options,
-          max_choice_options,
-          price: { amount },
-          description,
-          id,
-        } = customization;
+        const { min_choice_options, max_choice_options, description, id } =
+          customization;
         generalCustomization = {
           maxPermitted: max_choice_options,
           minPermitted: min_choice_options,
           title: description,
           id: id,
-          price: amount,
+          price: customization?.price?.amount,
         };
         break;
       }
@@ -395,6 +385,7 @@ const buildCustomizationOptionsRecursively = (
     op.title = title;
     op.price = price;
     op.ids[service] = id;
+    op.options = {};
 
     if (
       customization[customizationOptionsName] &&
@@ -446,7 +437,12 @@ const detailItem = async (serviceIds) => {
         accServices.push(
           new services[service].instance().getItem(itemData).then((data) => ({
             service: service,
-            serviceItem: data.data,
+            serviceItem:
+              service === POSTMATES
+                ? data.data
+                : service === GRUBHUB
+                ? data
+                : null,
           }))
         );
       }
