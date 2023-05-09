@@ -35,9 +35,17 @@ const searchPostmates = async (searchData, requestCookies) => {
 
           for (const { badgeType, text } of meta) {
             if (badgeType === "FARE") {
-              deliveryInfo.deliveryFee = +text.split(" ")[0].replace("$", "");
+              try {
+                deliveryInfo.deliveryFee = +text.split(" ")[0].replace("$", "");
+              } catch (e) {
+                deliveryInfo.deliveryFee = "Price not availabe";
+              }
             } else if (badgeType === "ETD") {
-              deliveryInfo.estimatedDeliveryTime = +text.split("–")[0];
+              try {
+                deliveryInfo.estimatedDeliveryTime = +text.split("–")[0];
+              } catch (e) {
+                deliveryInfo.estimatedDeliveryTime = "No time available";
+              }
             }
           }
 
