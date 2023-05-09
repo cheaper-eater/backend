@@ -277,6 +277,7 @@ const addItemToMenu = ({ categoryItems, item, service }) => {
     prices: { [service]: item.price },
     image: item.image,
     subsectionId: item.subsectionId,
+    sectionId: item.sectionId,
     ids: { [service]: item.id },
   };
 };
