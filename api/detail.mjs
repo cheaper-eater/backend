@@ -55,7 +55,7 @@ const parsePostmatesStore = (storeData) => {
     menu: (
       catalogSectionsMap[sections[0].uuid] || catalogSectionsMap[menuUUID]
     ).reduce((accCategory, catalogSection) => {
-      if (catalogSection.type == "standardItemsPayload") {
+      if (catalogSection.payload.type == "standardItemsPayload") {
         accCategory.push({
           categoryId: catalogSection.catalogSectionUUID,
           category: catalogSection.payload.standardItemsPayload.title.text,
